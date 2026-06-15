@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reservas - Hotel Imperial</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-50 min-h-screen flex">
+
+    <!-- Main Content -->
+    <main class="flex-1 p-8">
+        <header>
+            <h2>Gestão de Reservas</h2>
+            <div>
+                <a href="reservas-form.html" class="bg-blue-600 hover:bg-blue-700 text-white font-medium px-4 py-2 rounded-xl shadow-lg shadow-blue-600/20 transition-all duration-200 text-sm flex items-center gap-2">
+                    <span>➕</span> Nova Reserva
+                </a>
+            </div>
+        </header>
+
+        <!-- Filtros -->
+        <section class="glass-card p-5 rounded-2xl shadow-sm mb-6 flex flex-col md:flex-row gap-4 items-end fade-in-up">
+            <div class="flex-1 w-full">
+                <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Buscar por Hóspede ou Quarto</label>
+                <input type="text" id="filtro-busca" oninput="filtrarReservas()" class="w-full border border-slate-200 rounded-xl p-2.5 pl-4 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 bg-slate-50 text-slate-800 text-sm" placeholder="Digite o nome do hóspede ou nº do quarto...">
+            </div>
+            <div class="w-full md:w-48">
+                <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Status da Reserva</label>
+                <select id="filtro-status" onchange="filtrarReservas()" class="w-full border border-slate-200 rounded-xl p-2.5 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 bg-slate-50 text-slate-800 text-sm">
+                    <option value="todos">Todos</option>
+                    <option value="PENDENTE">Pendente</option>
+                    <option value="CONFIRMADA">Confirmada</option>
+                    <option value="CONCLUIDA">Concluída</option>
+                    <option value="CANCELADA">Cancelada</option>
+                </select>
+            </div>
+        </section>
+
+        <!-- Tabela -->
+        <section class="glass-card rounded-2xl shadow-sm overflow-hidden fade-in-up" style="animation-delay: 0.1s">
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-slate-100">
+                    <thead class="bg-slate-50/50">
+                        <tr>
+                            <th class="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Hóspede / Quarto</th>
+                            <th class="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Período</th>
+                            <th class="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Hóspedes</th>
+                            <th class="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Valor Total</th>
+                            <th class="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Check-in</th>
+                            <th class="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Status</th>
+                            <th class="px-6 py-4 text-right text-xs font-bold text-slate-500 uppercase tracking-wider">Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabela-reservas" class="bg-transparent divide-y divide-slate-100 text-slate-700">
+                        <!-- Gerado Dinamicamente -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+
+    <!-- Scripts -->
+    <script src="assets/js/db.js"></script>
+    <script src="assets/js/layout.js"></script>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            carregarReservas();
+        });
+
+        function carregarReservas() {
+            filtrarReservas();
+        }
+
+        function renderizarTabela(reservasList) {
+            const tbody = document.getElementById('tabela-reservas');
+            tbody.innerHTML = '';
+
+            if (reservasList.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="7" class="px-6 py-8 text-center text-sm text-slate-500">
+                            Nenhuma reserva encontrada para os filtros selecionados.
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            const hospedes = HotelDB.DAOs.hospedes.obterTudo();
+            const quartos = HotelDB.DAOs.quartos.obterTudo();
+            const pagamentos = HotelDB.DAOs.pagamentos.obterTudo();
+
+            reservasList.forEach(r => {
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-slate-50/40 transition-colors';
+
+                const hospede = hospedes.find(h => h.id == r.hospedeId);
+                const quarto = quartos.find(q => q.id == r.quartoId);
+                
+                const nomeHospede = hospede ? hospede.nome : 'Desconhecido';
+                const numQuarto = quarto ? quarto.numero : 'Desconhecido';
+                const tipoQuarto = quarto ? quarto.tipo : 'Desconhecido';
+
+                // Formatar Período
+                const dataIn = formatarDataBR(r.dataEntrada);
+                const dataOut = formatarDataBR(r.dataSaida);
+
+                // Calcular Saldo Pendente
+                const totalPago = pagamentos
+                    .filter(p => p.reservaId == r.id && p.status === 'APROVADO')
+                    .reduce((sum, p) => sum + parseFloat(p.valor), 0);
+                const saldoPendente = parseFloat(r.valorTotal) - totalPago;
+
+                // Status Badge da Reserva
+                let badgeClass = '';
+                let statusText = r.status;
+                if (r.status === 'PENDENTE') {
+                    badgeClass = 'bg-slate-100 text-slate-800';
+                    statusText = 'Pendente';
+                } else if (r.status === 'CONFIRMADA') {
+                    badgeClass = 'bg-blue-100 text-blue-800';
+                    statusText = 'Confirmada';
+                } else if (r.status === 'CONCLUIDA') {
+                    badgeClass = 'bg-green-100 text-green-800';
+                    statusText = 'Concluída';
+                } else {
+                    badgeClass = 'bg-red-100 text-red-800';
+                    statusText = r.noShow ? 'No-Show' : 'Cancelada';
+                }
+
+                // Check-in Badge
+                let badgeCheckin = '';
+                if (r.checkinRealizado) {
+                    badgeCheckin = '<span class="inline-flex items-center text-[10px] font-bold px-2 py-0.5 rounded-full bg-indigo-150 text-indigo-800 border border-indigo-200">Realizado</span>';
+                } else if (r.status === 'CANCELADA') {
+                    badgeCheckin = '<span class="text-xs text-slate-400">-</span>';
+                } else {
+                    badgeCheckin = '<span class="inline-flex items-center text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-500">Não realizado</span>';
+                }
+
+                // Botões de Ações Dinâmicos com base no ciclo de vida
+                let acoesHTML = '';
+                if (r.status === 'PENDENTE') {
+                    acoesHTML += `<button onclick="confirmarReserva(${r.id})" class="text-blue-600 hover:text-blue-900 font-bold mr-3" title="Confirmar Reserva">Confirmar</button>`;
+                    acoesHTML += `<button onclick="cancelarReserva(${r.id})" class="text-red-600 hover:text-red-950 font-bold mr-3" title="Cancelar Reserva">Cancelar</button>`;
+                } else if (r.status === 'CONFIRMADA' && !r.checkinRealizado) {
+                    acoesHTML += `<button onclick="realizarCheckin(${r.id})" class="text-indigo-600 hover:text-indigo-900 font-bold mr-3" title="Realizar Check-in">Check-in</button>`;
+                    acoesHTML += `<button onclick="marcarNoShow(${r.id})" class="text-amber-600 hover:text-amber-900 font-bold mr-3" title="Marcar como No-Show">No-Show</button>`;
+                    acoesHTML += `<button onclick="cancelarReserva(${r.id})" class="text-red-600 hover:text-red-950 font-bold mr-3" title="Cancelar Reserva">Cancelar</button>`;
+                } else if (r.status === 'CONFIRMADA' && r.checkinRealizado) {
+                    acoesHTML += `<button onclick="realizarCheckout(${r.id})" class="text-emerald-600 hover:text-emerald-900 font-bold mr-3" title="Realizar Check-out">Check-out</button>`;
+                }
+
+                // Ação de pagamento se houver saldo pendente
+                if (saldoPendente > 0 && r.status !== 'CANCELADA') {
+                    acoesHTML += `<a href="pagamentos-form.html?reservaId=${r.id}" class="text-emerald-700 hover:text-emerald-950 font-bold" title="Lançar pagamento pendente">Pagar (R$ ${saldoPendente.toFixed(2)})</a>`;
+                }
+
+                tr.innerHTML = `
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="text-sm font-semibold text-slate-900">${nomeHospede}</div>
+                        <div class="text-xs text-slate-400">Quarto ${numQuarto} (${tipoQuarto})</div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-600">${dataIn} até ${dataOut}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-600">${r.qtdAdultos} Ad / ${r.qtdCriancas} Cr</td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="text-sm font-bold text-slate-900">${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(r.valorTotal)}</div>
+                        <div class="text-[10px] ${saldoPendente > 0 ? 'text-amber-600 font-semibold' : 'text-emerald-600 font-bold'}">
+                            ${saldoPendente > 0 ? `Pendente: R$ ${saldoPendente.toFixed(2)}` : 'Pago'}
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">${badgeCheckin}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm">
+                        <span class="inline-flex items-center text-xs font-semibold px-2.5 py-0.5 rounded-full ${badgeClass}">
+                            ${statusText}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        ${acoesHTML}
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function filtrarReservas() {
+            const busca = document.getElementById('filtro-busca').value.toLowerCase();
+            const status = document.getElementById('filtro-status').value;
+
+            let reservas = HotelDB.DAOs.reservas.obterTudo();
+            const hospedes = HotelDB.DAOs.hospedes.obterTudo();
+            const quartos = HotelDB.DAOs.quartos.obterTudo();
+
+            if (busca) {
+                reservas = reservas.filter(r => {
+                    const hospede = hospedes.find(h => h.id == r.hospedeId);
+                    const quarto = quartos.find(q => q.id == r.quartoId);
+                    
+                    const nomeHospede = hospede ? hospede.nome.toLowerCase() : '';
+                    const numQuarto = quarto ? quarto.numero : '';
+                    
+                    return nomeHospede.includes(busca) || numQuarto.includes(busca);
+                });
+            }
+
+            if (status !== 'todos') {
+                reservas = reservas.filter(r => r.status === status);
+            }
+
+            // Ordenar por ID decrescente (mais recentes primeiro)
+            reservas.sort((a, b) => b.id - a.id);
+
+            renderizarTabela(reservas);
+        }
+
+        // Funções de Ciclo de Vida
+        function confirmarReserva(id) {
+            const reserva = HotelDB.DAOs.reservas.buscarPorId(id);
+            if (reserva) {
+                reserva.status = 'CONFIRMADA';
+                const resp = HotelDB.Fachada.salvar('reservas', reserva);
+                if (resp.sucesso) {
+                    window.mostrarToast(`Reserva #${id} confirmada com sucesso!`, 'sucesso');
+                    filtrarReservas();
+                } else {
+                    window.mostrarToast(resp.erro, 'erro');
+                }
+            }
+        }
+
+        function cancelarReserva(id) {
+            if (confirm('Deseja realmente cancelar esta reserva?')) {
+                const reserva = HotelDB.DAOs.reservas.buscarPorId(id);
+                if (reserva) {
+                    reserva.status = 'CANCELADA';
+                    const resp = HotelDB.Fachada.salvar('reservas', reserva);
+                    if (resp.sucesso) {
+                        window.mostrarToast(`Reserva #${id} cancelada com sucesso!`, 'sucesso');
+                        filtrarReservas();
+                    } else {
+                        window.mostrarToast(resp.erro, 'erro');
+                    }
+                }
+            }
+        }
+
+        function realizarCheckin(id) {
+            const reserva = HotelDB.DAOs.reservas.buscarPorId(id);
+            if (reserva) {
+                // Verificar se o quarto já está ocupado por outro hóspede
+                const quarto = HotelDB.DAOs.quartos.buscarPorId(reserva.quartoId);
+                if (quarto && quarto.status === 'OCUPADO') {
+                    window.mostrarToast(`O Quarto ${quarto.numero} está ocupado atualmente. Não é possível realizar o check-in.`, 'erro');
+                    return;
+                }
+
+                reserva.checkinRealizado = true;
+                reserva.status = 'CONFIRMADA';
+                const resp = HotelDB.Fachada.salvar('reservas', reserva);
+                if (resp.sucesso) {
+                    window.mostrarToast(`Check-in realizado para a Reserva #${id}! O Quarto ${quarto.numero} está agora ocupado.`, 'sucesso');
+                    filtrarReservas();
+                } else {
+                    window.mostrarToast(resp.erro, 'erro');
+                }
+            }
+        }
+
+        function realizarCheckout(id) {
+            const reserva = HotelDB.DAOs.reservas.buscarPorId(id);
+            if (reserva) {
+                // Verificar se há saldo pendente
+                const pagamentos = HotelDB.DAOs.pagamentos.obterTudo();
+                const totalPago = pagamentos
+                    .filter(p => p.reservaId == id && p.status === 'APROVADO')
+                    .reduce((sum, p) => sum + parseFloat(p.valor), 0);
+                const saldoPendente = parseFloat(reserva.valorTotal) - totalPago;
+
+                if (saldoPendente > 0) {
+                    if (!confirm(`Atenção: Há um saldo pendente de R$ ${saldoPendente.toFixed(2)} para esta reserva. Deseja realizar o check-out mesmo assim?`)) {
+                        return;
+                    }
+                }
+
+                reserva.status = 'CONCLUIDA';
+                const resp = HotelDB.Fachada.salvar('reservas', reserva);
+                if (resp.sucesso) {
+                    window.mostrarToast(`Check-out realizado para a Reserva #${id}! O Quarto está agora disponível.`, 'sucesso');
+                    filtrarReservas();
+                } else {
+                    window.mostrarToast(resp.erro, 'erro');
+                }
+            }
+        }
+
+        function marcarNoShow(id) {
+            if (confirm('Marcar esta reserva como NO-SHOW? O quarto será liberado e a reserva cancelada.')) {
+                const reserva = HotelDB.DAOs.reservas.buscarPorId(id);
+                if (reserva) {
+                    reserva.status = 'CANCELADA';
+                    reserva.noShow = true;
+                    const resp = HotelDB.Fachada.salvar('reservas', reserva);
+                    if (resp.sucesso) {
+                        window.mostrarToast(`Reserva #${id} marcada como No-Show.`, 'info');
+                        filtrarReservas();
+                    } else {
+                        window.mostrarToast(resp.erro, 'erro');
+                    }
+                }
+            }
+        }
+
+        // Helpers de Data
+        function formatarDataBR(dataStr) {
+            if (!dataStr) return '';
+            const partes = dataStr.split('-');
+            if (partes.length !== 3) return dataStr;
+            return `${partes[2]}/${partes[1]}/${partes[0]}`;
+        }
+    </script>
+</body>
+</html>

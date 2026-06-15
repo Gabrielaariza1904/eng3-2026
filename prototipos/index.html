@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel Geral - Hotel Imperial</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-50 min-h-screen flex">
+
+    <!-- Main Content -->
+    <main class="flex-1 p-8">
+        <!-- O layout.js injetará a Sidebar à esquerda e formatará o Header abaixo automaticamente -->
+        <header>
+            <h2>Painel Geral</h2>
+            <div>
+                <a href="reservas-form.html" class="bg-blue-600 hover:bg-blue-700 text-white font-medium px-4 py-2 rounded-xl shadow-lg shadow-blue-600/20 transition-all duration-200 text-sm flex items-center gap-2">
+                    <span>➕</span> Nova Reserva
+                </a>
+            </div>
+        </header>
+
+        <!-- Seção de Métricas (KPIs) -->
+        <section class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+            <!-- Card Hóspedes -->
+            <div class="glass-card p-6 rounded-2xl shadow-sm hover:shadow-md transition-all duration-300 fade-in-up">
+                <div class="flex items-center justify-between mb-4">
+                    <span class="text-sm font-semibold text-slate-500 uppercase tracking-wider">Hóspedes Ativos</span>
+                    <span class="text-2xl p-2 bg-blue-50 text-blue-600 rounded-lg">👥</span>
+                </div>
+                <h3 id="kpi-hospedes" class="text-3xl font-extrabold text-slate-900">0</h3>
+                <p class="text-xs text-slate-500 mt-2">Cadastrados no sistema</p>
+            </div>
+
+            <!-- Card Ocupação -->
+            <div class="glass-card p-6 rounded-2xl shadow-sm hover:shadow-md transition-all duration-300 fade-in-up" style="animation-delay: 0.1s">
+                <div class="flex items-center justify-between mb-4">
+                    <span class="text-sm font-semibold text-slate-500 uppercase tracking-wider">Taxa de Ocupação</span>
+                    <span class="text-2xl p-2 bg-indigo-50 text-indigo-600 rounded-lg">🛏️</span>
+                </div>
+                <div class="flex items-baseline gap-2">
+                    <h3 id="kpi-ocupacao" class="text-3xl font-extrabold text-slate-900">0%</h3>
+                    <span id="kpi-ocupacao-detalhe" class="text-xs font-semibold text-slate-500">(0/0 quartos)</span>
+                </div>
+                <!-- Mini Barra de Progresso -->
+                <div class="w-full bg-slate-100 rounded-full h-2 mt-4 overflow-hidden">
+                    <div id="kpi-ocupacao-progresso" class="bg-indigo-600 h-full rounded-full transition-all duration-500" style="width: 0%"></div>
+                </div>
+            </div>
+
+            <!-- Card Check-ins Hoje -->
+            <div class="glass-card p-6 rounded-2xl shadow-sm hover:shadow-md transition-all duration-300 fade-in-up" style="animation-delay: 0.2s">
+                <div class="flex items-center justify-between mb-4">
+                    <span class="text-sm font-semibold text-slate-500 uppercase tracking-wider">Entradas Hoje</span>
+                    <span class="text-2xl p-2 bg-green-50 text-green-600 rounded-lg">🔑</span>
+                </div>
+                <h3 id="kpi-checkins" class="text-3xl font-extrabold text-slate-900">0</h3>
+                <p class="text-xs text-slate-500 mt-2">Reservas iniciando hoje</p>
+            </div>
+
+            <!-- Card Receita Total -->
+            <div class="glass-card p-6 rounded-2xl shadow-sm hover:shadow-md transition-all duration-300 fade-in-up" style="animation-delay: 0.3s">
+                <div class="flex items-center justify-between mb-4">
+                    <span class="text-sm font-semibold text-slate-500 uppercase tracking-wider">Receita Aprovada</span>
+                    <span class="text-2xl p-2 bg-emerald-50 text-emerald-600 rounded-lg">💳</span>
+                </div>
+                <h3 id="kpi-receita" class="text-3xl font-extrabold text-slate-900">R$ 0,00</h3>
+                <p class="text-xs text-slate-500 mt-2">Pagamentos confirmados</p>
+            </div>
+        </section>
+
+        <!-- Grid e Conteúdo Principal -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Grid de Quartos -->
+            <div class="lg:col-span-2 glass-card p-6 rounded-2xl shadow-sm">
+                <div class="flex justify-between items-center mb-6">
+                    <div>
+                        <h3 class="text-xl font-bold text-slate-900">Status dos Quartos</h3>
+                        <p class="text-xs text-slate-500">Clique em um quarto para alterar seu estado operacional</p>
+                    </div>
+                    <div class="flex gap-2">
+                        <span class="inline-flex items-center text-xs font-semibold px-2.5 py-0.5 rounded-full bg-green-100 text-green-800">Disponível</span>
+                        <span class="inline-flex items-center text-xs font-semibold px-2.5 py-0.5 rounded-full bg-red-100 text-red-800">Ocupado</span>
+                        <span class="inline-flex items-center text-xs font-semibold px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-800">Manutenção</span>
+                    </div>
+                </div>
+
+                <div id="quartos-grid" class="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                    <!-- Gerado Dinamicamente por JavaScript -->
+                </div>
+            </div>
+
+            <!-- Atividades Recentes e Feed -->
+            <div class="glass-card p-6 rounded-2xl shadow-sm">
+                <h3 class="text-xl font-bold text-slate-900 mb-6">Atividades Recentes</h3>
+                <div id="feed-atividades" class="space-y-4">
+                    <!-- Gerado Dinamicamente -->
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Modal de Alteração de Status do Quarto -->
+    <div id="modal-status-quarto" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm hidden">
+        <div class="bg-white rounded-2xl max-w-sm w-full p-6 shadow-xl transform scale-95 transition-all duration-300">
+            <h3 class="text-lg font-bold text-slate-900 mb-2">Alterar Status do Quarto</h3>
+            <p id="modal-quarto-info" class="text-sm text-slate-500 mb-4">Quarto 101 - Standard Casal</p>
+            
+            <div class="space-y-2 mb-6">
+                <label class="block text-sm font-semibold text-slate-700">Selecione o Novo Status:</label>
+                <select id="modal-quarto-select" class="w-full border border-slate-300 rounded-xl p-2.5 focus:ring-blue-500 focus:border-blue-500 bg-slate-50">
+                    <option value="DISPONIVEL">Disponível</option>
+                    <option value="OCUPADO">Ocupado</option>
+                    <option value="MANUTENCAO">Manutenção</option>
+                </select>
+            </div>
+
+            <div class="flex justify-end gap-3">
+                <button onclick="fecharModalQuarto()" class="px-4 py-2 border border-slate-200 rounded-xl text-sm font-semibold text-slate-600 hover:bg-slate-50">Cancelar</button>
+                <button onclick="salvarStatusQuarto()" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-semibold shadow-lg shadow-blue-600/15">Salvar Status</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts do Sistema -->
+    <script src="assets/js/db.js"></script>
+    <script src="assets/js/layout.js"></script>
+    
+    <script>
+        let quartoSelecionadoId = null;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            carregarDashboard();
+        });
+
+        function carregarDashboard() {
+            // 1. Atualizar KPIs
+            const hospedes = HotelDB.DAOs.hospedes.obterTudo();
+            const quartos = HotelDB.DAOs.quartos.obterTudo();
+            const reservas = HotelDB.DAOs.reservas.obterTudo();
+            const pagamentos = HotelDB.DAOs.pagamentos.obterTudo();
+
+            // Hóspedes Ativos
+            const hospedesAtivos = hospedes.filter(h => !h.inativo).length;
+            document.getElementById('kpi-hospedes').innerText = hospedesAtivos;
+
+            // Ocupação
+            const totalQuartos = quartos.length;
+            const ocupados = quartos.filter(q => q.status === 'OCUPADO').length;
+            const taxaOcupacao = totalQuartos > 0 ? Math.round((ocupados / totalQuartos) * 100) : 0;
+            document.getElementById('kpi-ocupacao').innerText = `${taxaOcupacao}%`;
+            document.getElementById('kpi-ocupacao-detalhe').innerText = `(${ocupados}/${totalQuartos} quartos)`;
+            document.getElementById('kpi-ocupacao-progresso').style.width = `${taxaOcupacao}%`;
+
+            // Check-ins hoje
+            const hojeStr = new Date().toISOString().split('T')[0];
+            const checkinsHoje = reservas.filter(r => r.dataEntrada === hojeStr && r.status !== 'CANCELADA').length;
+            document.getElementById('kpi-checkins').innerText = checkinsHoje;
+
+            // Receita Total Aprovada
+            const receitaTotal = pagamentos
+                .filter(p => p.status === 'APROVADO')
+                .reduce((s, p) => s + parseFloat(p.valor), 0);
+            
+            document.getElementById('kpi-receita').innerText = new Intl.NumberFormat('pt-BR', {
+                style: 'currency',
+                currency: 'BRL'
+            }).format(receitaTotal);
+
+            // 2. Renderizar grid de quartos
+            renderizarGridQuartos(quartos);
+
+            // 3. Renderizar feed de atividades
+            renderizarFeedAtividades(hospedes, reservas, pagamentos);
+        }
+
+        function renderizarGridQuartos(quartos) {
+            const grid = document.getElementById('quartos-grid');
+            grid.innerHTML = '';
+
+            quartos.forEach(quarto => {
+                let statusClasses = '';
+                let badgeText = '';
+                
+                if (quarto.status === 'DISPONIVEL') {
+                    statusClasses = 'bg-emerald-50 border-emerald-200 hover:bg-emerald-100/70 hover:border-emerald-300 text-emerald-900';
+                    badgeText = 'Disponível';
+                } else if (quarto.status === 'OCUPADO') {
+                    statusClasses = 'bg-red-50 border-red-200 hover:bg-red-100/70 hover:border-red-300 text-red-900';
+                    badgeText = 'Ocupado';
+                } else {
+                    statusClasses = 'bg-amber-50 border-amber-200 hover:bg-amber-100/70 hover:border-amber-300 text-amber-900';
+                    badgeText = 'Manutenção';
+                }
+
+                const card = document.createElement('div');
+                card.className = `border p-5 rounded-2xl cursor-pointer transition-all duration-200 flex flex-col justify-between ${statusClasses}`;
+                card.onclick = () => abrirModalQuarto(quarto.id);
+                card.innerHTML = `
+                    <div class="flex justify-between items-start mb-2">
+                        <span class="text-2xl font-black">${quarto.numero}</span>
+                        <span class="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${
+                            quarto.status === 'DISPONIVEL' ? 'bg-emerald-200 text-emerald-950' : 
+                            quarto.status === 'OCUPADO' ? 'bg-red-200 text-red-950' : 'bg-amber-200 text-amber-950'
+                        }">${badgeText}</span>
+                    </div>
+                    <div>
+                        <p class="text-xs font-semibold opacity-70">${quarto.tipo}</p>
+                        <p class="text-[10px] opacity-60 mt-0.5">Capacidade: ${quarto.capacidadeAdultos} Ad / ${quarto.capacidadeCriancas} Cr</p>
+                        <p class="text-sm font-bold mt-2">${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(quarto.valorDiaria)}/dia</p>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        function renderizarFeedAtividades(hospedes, reservas, pagamentos) {
+            const feed = document.getElementById('feed-atividades');
+            feed.innerHTML = '';
+
+            const atividades = [];
+
+            // Adicionar hóspedes cadastrados no feed
+            hospedes.slice(-3).forEach(h => {
+                atividades.push({
+                    tipo: 'hospede',
+                    texto: `Hóspede <strong>${h.nome}</strong> foi cadastrado no sistema.`,
+                    data: new Date(2026, 5, 14, 10 - h.id, 0), // Mock data de atividade
+                    icone: '👥',
+                    corIcone: 'bg-blue-100 text-blue-600'
+                });
+            });
+
+            // Adicionar reservas no feed
+            reservas.slice(-3).forEach(r => {
+                const hospede = hospedes.find(h => h.id == r.hospedeId);
+                const nome = hospede ? hospede.nome : 'Desconhecido';
+                atividades.push({
+                    tipo: 'reserva',
+                    texto: `Reserva #${r.id} criada para <strong>${nome}</strong> (Quarto ${r.quartoId}).`,
+                    data: new Date(2026, 5, 14, 12 - r.id, 30),
+                    icone: '🔑',
+                    corIcone: 'bg-indigo-100 text-indigo-600'
+                });
+            });
+
+            // Adicionar pagamentos no feed
+            pagamentos.slice(-2).forEach(p => {
+                atividades.push({
+                    tipo: 'pagamento',
+                    texto: `Pagamento de <strong>${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(p.valor)}</strong> recebido via ${p.formaPagamento}.`,
+                    data: new Date(2026, 5, 14, 15 - p.id, 15),
+                    icone: '💳',
+                    corIcone: 'bg-emerald-100 text-emerald-600'
+                });
+            });
+
+            // Ordenar atividades por data decrescente
+            atividades.sort((a, b) => b.data - a.data);
+
+            if (atividades.length === 0) {
+                feed.innerHTML = `<p class="text-sm text-slate-500 text-center py-4">Sem atividades recentes.</p>`;
+                return;
+            }
+
+            atividades.slice(0, 5).forEach(at => {
+                const item = document.createElement('div');
+                item.className = 'flex gap-3 items-start text-sm border-b border-slate-100 pb-3 last:border-0 last:pb-0';
+                item.innerHTML = `
+                    <div class="w-8 h-8 rounded-xl ${at.corIcone} flex items-center justify-center text-base shrink-0">${at.icone}</div>
+                    <div class="flex-1 min-w-0">
+                        <p class="text-slate-700 leading-snug">${at.texto}</p>
+                        <span class="text-[10px] text-slate-400 font-medium">Hoje</span>
+                    </div>
+                `;
+                feed.appendChild(item);
+            });
+        }
+
+        // Funções do Modal
+        function abrirModalQuarto(id) {
+            quartoSelecionadoId = id;
+            const quarto = HotelDB.DAOs.quartos.buscarPorId(id);
+            if (!quarto) return;
+
+            document.getElementById('modal-quarto-info').innerText = `Quarto ${quarto.numero} - ${quarto.tipo}`;
+            document.getElementById('modal-quarto-select').value = quarto.status;
+            
+            const modal = document.getElementById('modal-status-quarto');
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                modal.firstElementChild.classList.remove('scale-95');
+                modal.firstElementChild.classList.add('scale-100');
+            }, 50);
+        }
+
+        function fecharModalQuarto() {
+            const modal = document.getElementById('modal-status-quarto');
+            modal.firstElementChild.classList.remove('scale-100');
+            modal.firstElementChild.classList.add('scale-95');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+                quartoSelecionadoId = null;
+            }, 200);
+        }
+
+        function salvarStatusQuarto() {
+            if (!quartoSelecionadoId) return;
+
+            const novoStatus = document.getElementById('modal-quarto-select').value;
+            const quarto = HotelDB.DAOs.quartos.buscarPorId(quartoSelecionadoId);
+            
+            if (quarto) {
+                quarto.status = novoStatus;
+                const response = HotelDB.Fachada.salvar('quartos', quarto);
+                if (response.sucesso) {
+                    window.mostrarToast(`Status do quarto ${quarto.numero} atualizado para ${novoStatus}!`, 'sucesso');
+                    carregarDashboard();
+                } else {
+                    window.mostrarToast(response.erro, 'erro');
+                }
+            }
+
+            fecharModalQuarto();
+        }
+    </script>
+</body>
+</html>

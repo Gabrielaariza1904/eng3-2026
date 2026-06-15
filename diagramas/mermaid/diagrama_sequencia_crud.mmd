@@ -1,0 +1,52 @@
+sequenceDiagram
+    actor Cliente as "Usuário (Browser)"
+    participant View as "HospedeView (HTML/JS)"
+    participant Controller as HospedeController
+    participant Facade as Fachada
+    participant Strategy1 as ValidarDadosObrigatorios
+    participant Strategy2 as ValidarCpfUnico
+    participant DAO as HospedeDAO
+    participant DB as MySQL
+
+    Cliente->>View: Preenche form e clica em "Salvar"
+    View->>Controller: POST /hospedes (JSON)
+    activate Controller
+
+    Controller->>Controller: Instancia Hospede (Modelo)
+    Controller->>Facade: salvar(hospede)
+    activate Facade
+
+    Facade->>Strategy1: processar(hospede)
+    activate Strategy1
+    Strategy1-->>Facade: null (sem erro)
+    deactivate Strategy1
+
+    Facade->>Strategy2: processar(hospede)
+    activate Strategy2
+    Strategy2->>DAO: consultar(hospede_cpf)
+    activate DAO
+    DAO->>DB: SELECT * FROM hospedes WHERE cpf = ?
+    activate DB
+    DB-->>DAO: ResultSet (vazio)
+    deactivate DB
+    DAO-->>Strategy2: null (sem registros)
+    deactivate DAO
+    Strategy2-->>Facade: null (sem erro)
+    deactivate Strategy2
+
+    Facade->>DAO: salvar(hospede)
+    activate DAO
+    DAO->>DB: INSERT INTO estados, cidades, enderecos, hospedes...
+    activate DB
+    DB-->>DAO: Sucesso
+    deactivate DB
+    DAO-->>Facade: Sucesso
+    deactivate DAO
+
+    Facade-->>Controller: String (Mensagem Sucesso)
+    deactivate Facade
+
+    Controller-->>View: 201 Created (JSON Resposta)
+    deactivate Controller
+
+    View-->>Cliente: Exibe mensagem de "Hóspede Salvo com Sucesso"

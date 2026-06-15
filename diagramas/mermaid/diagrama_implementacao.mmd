@@ -1,0 +1,111 @@
+classDiagram
+    namespace Model_Dominio {
+        class EntidadeDominio {
+            <<abstract>>
+            -id : int
+        }
+        class Pessoa {
+            <<abstract>>
+            -nome : String
+            -cpf : String
+            -email : String
+            -telefone : String
+        }
+        class Hospede {
+            -inativo : boolean
+        }
+        class Endereco {
+            -logradouro : String
+            -numero : String
+            -cep : String
+            -bairro : String
+            -complemento : String
+        }
+        class Cidade {
+            -nome : String
+        }
+        class Estado {
+            -nome : String
+            -uf : String
+        }
+    }
+    
+    namespace Controller_MVC {
+        class HospedeController {
+            +salvar(hospede : Hospede) : String
+            +alterar(hospede : Hospede) : String
+            +inativar(id : int) : String
+            +consultar(filtros : Object) : List
+        }
+    }
+
+    namespace Facade {
+        class Fachada {
+            -daos : Map
+            -strategies : Map
+            +salvar(entidade : EntidadeDominio) : String
+            +alterar(entidade : EntidadeDominio) : String
+            +inativar(entidade : EntidadeDominio) : String
+            +consultar(entidade : EntidadeDominio) : List
+        }
+    }
+
+    namespace Strategy_Regras_de_Negocio {
+        class IStrategy {
+            <<interface>>
+            +processar(entidade : EntidadeDominio) : String
+        }
+        class ValidarCpfUnico {
+            +processar(entidade : EntidadeDominio) : String
+        }
+        class ValidarDadosObrigatoriosHospede {
+            +processar(entidade : EntidadeDominio) : String
+        }
+        class ValidarEmail {
+            +processar(entidade : EntidadeDominio) : String
+        }
+    }
+
+    namespace DAO_Persistencia {
+        class IDAO {
+            <<interface>>
+            +salvar(entidade : EntidadeDominio) : void
+            +alterar(entidade : EntidadeDominio) : void
+            +inativar(entidade : EntidadeDominio) : void
+            +consultar(entidade : EntidadeDominio) : List
+        }
+        class HospedeDAO {
+            -conexao : ConexaoMySQL
+            +salvar(entidade : EntidadeDominio) : void
+            +alterar(entidade : EntidadeDominio) : void
+            +inativar(entidade : EntidadeDominio) : void
+            +consultar(entidade : EntidadeDominio) : List
+        }
+        class ConexaoMySQL {
+            +getConnection() : Connection
+        }
+    }
+
+    %% Relationships within Model_Dominio
+    EntidadeDominio <|-- Pessoa
+    Pessoa <|-- Hospede
+    EntidadeDominio <|-- Endereco
+    EntidadeDominio <|-- Cidade
+    EntidadeDominio <|-- Estado
+    Pessoa "1" --> "1" Endereco : possui
+    Endereco "1" --> "1" Cidade : tem
+    Cidade "1" --> "1" Estado : tem
+
+    %% Relationships within DAO_Persistencia
+    HospedeDAO "1" --> "1" ConexaoMySQL : usa
+
+    %% Interface Realizations
+    IStrategy <|.. ValidarCpfUnico
+    IStrategy <|.. ValidarDadosObrigatoriosHospede
+    IStrategy <|.. ValidarEmail
+    IDAO <|.. HospedeDAO
+
+    %% Cross-namespace relationships
+    HospedeController "1" --> "1" Fachada : chama
+    Fachada "1" --> "0..*" IStrategy : executa
+    Fachada "1" --> "1..*" IDAO : delega

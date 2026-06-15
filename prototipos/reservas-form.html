@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Criar Reserva - Hotel Imperial</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-50 min-h-screen flex">
+
+    <!-- Main Content -->
+    <main class="flex-1 p-8">
+        <header>
+            <h2>Criar Reserva</h2>
+            <div>
+                <a href="reservas-lista.html" class="text-blue-600 hover:text-blue-800 font-semibold text-sm flex items-center gap-1.5">
+                    <span>⬅️</span> Voltar para Lista
+                </a>
+            </div>
+        </header>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 max-w-6xl mx-auto items-start fade-in-up">
+            <!-- Formulário -->
+            <div class="lg:col-span-2 glass-card p-8 rounded-2xl shadow-sm space-y-6">
+                <form id="form-reserva" onsubmit="criarReserva(event)" class="space-y-6">
+                    
+                    <!-- Passo 1: Selecionar Hóspede -->
+                    <div>
+                        <h3 class="text-sm font-bold text-slate-500 uppercase tracking-wider mb-3">1. Selecionar Hóspede *</h3>
+                        <div class="relative">
+                            <input type="text" id="hospede-busca" required oninput="buscarHospedes()" class="w-full border border-slate-200 rounded-xl p-3 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 bg-slate-50 text-slate-800 text-sm transition-all" placeholder="Digite o nome ou CPF do hóspede...">
+                            <input type="hidden" id="hospede-id" required>
+                            
+                            <!-- Dropdown de resultados -->
+                            <div id="hospede-resultados" class="absolute left-0 right-0 mt-1 bg-white border border-slate-200 rounded-xl shadow-lg z-30 max-h-48 overflow-y-auto hidden">
+                                <!-- Resultados populados por JS -->
+                            </div>
+                        </div>
+                        <div id="hospede-selecionado" class="mt-2 p-3 bg-blue-50 text-blue-900 rounded-xl text-xs font-semibold hidden flex justify-between items-center">
+                            <span id="hospede-detalhe">Hóspede: João da Silva (CPF: 111.222.333-44)</span>
+                            <button type="button" onclick="limparHospede()" class="text-red-500 hover:underline">Limpar</button>
+                        </div>
+                    </div>
+
+                    <!-- Passo 2: Período e Ocupantes -->
+                    <div>
+                        <h3 class="text-sm font-bold text-slate-500 uppercase tracking-wider mb-3">2. Período e Hóspedes</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                            <div class="md:col-span-2">
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Check-in *</label>
+                                <input type="date" id="data-entrada" required onchange="atualizarPeriodo(); buscarQuartosDisponiveis()" class="w-full border border-slate-200 rounded-xl p-2.5 bg-slate-50 text-slate-800 text-sm focus:ring-blue-500 focus:border-blue-500">
+                            </div>
+                            <div class="md:col-span-2">
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Check-out *</label>
+                                <input type="date" id="data-saida" required onchange="atualizarPeriodo(); buscarQuartosDisponiveis()" class="w-full border border-slate-200 rounded-xl p-2.5 bg-slate-50 text-slate-800 text-sm focus:ring-blue-500 focus:border-blue-500">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Adultos *</label>
+                                <input type="number" id="qtd-adultos" min="1" max="10" value="1" required onchange="buscarQuartosDisponiveis()" class="w-full border border-slate-200 rounded-xl p-2.5 bg-slate-50 text-slate-800 text-sm focus:ring-blue-500 focus:border-blue-500">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Crianças</label>
+                                <input type="number" id="qtd-criancas" min="0" max="10" value="0" required onchange="buscarQuartosDisponiveis()" class="w-full border border-slate-200 rounded-xl p-2.5 bg-slate-50 text-slate-800 text-sm focus:ring-blue-500 focus:border-blue-500">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Passo 3: Selecionar Acomodação -->
+                    <div>
+                        <h3 class="text-sm font-bold text-slate-500 uppercase tracking-wider mb-3">3. Selecionar Quarto Disponível *</h3>
+                        <p class="text-xs text-slate-400 mb-2">Insira as datas e ocupantes acima para carregar quartos compatíveis e livres.</p>
+                        
+                        <div id="quarto-selecao-container" class="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-60 overflow-y-auto p-1">
+                            <p class="text-sm text-slate-500 italic py-4 col-span-2 text-center">Aguardando definição de período e hóspedes...</p>
+                        </div>
+                        <input type="hidden" id="quarto-id" required>
+                    </div>
+
+                    <!-- Passo 4: Promoções e Políticas -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <h3 class="text-sm font-bold text-slate-500 uppercase tracking-wider mb-3">4. Cupom de Promoção</h3>
+                            <select id="promocao-id" onchange="atualizarPrecoTotal()" class="w-full border border-slate-200 rounded-xl p-3 bg-slate-50 text-slate-800 text-sm focus:ring-blue-500 focus:border-blue-500">
+                                <option value="">Sem Cupom</option>
+                                <!-- JS populará -->
+                            </select>
+                        </div>
+                        <div>
+                            <h3 class="text-sm font-bold text-slate-500 uppercase tracking-wider mb-3">5. Política de Cancelamento *</h3>
+                            <select id="politica-id" required class="w-full border border-slate-200 rounded-xl p-3 bg-slate-50 text-slate-800 text-sm focus:ring-blue-500 focus:border-blue-500">
+                                <!-- JS populará -->
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Botão Salvar -->
+                    <div class="flex justify-end border-t border-slate-100 pt-6">
+                        <button type="submit" class="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl text-sm shadow-lg shadow-blue-600/15 transition-all w-full md:w-auto">Criar e Confirmar Reserva</button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Card de Preço Lateral -->
+            <div class="glass-card p-6 rounded-2xl shadow-sm space-y-6 lg:sticky lg:top-8">
+                <h3 class="text-lg font-bold text-slate-800 border-b border-slate-100 pb-3">Resumo da Reserva</h3>
+                
+                <div class="space-y-3 text-sm text-slate-600">
+                    <div class="flex justify-between">
+                        <span>Hóspede:</span>
+                        <span id="resumo-hospede" class="font-semibold text-slate-800 truncate max-w-[150px]">-</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span>Check-in:</span>
+                        <span id="resumo-checkin" class="font-semibold text-slate-800">-</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span>Check-out:</span>
+                        <span id="resumo-checkout" class="font-semibold text-slate-800">-</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span>Diárias:</span>
+                        <span id="resumo-diarias" class="font-semibold text-slate-800">0</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span>Quarto Selecionado:</span>
+                        <span id="resumo-quarto" class="font-semibold text-slate-800">-</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span>Valor Diária:</span>
+                        <span id="resumo-valor-diaria" class="font-semibold text-slate-800">R$ 0,00</span>
+                    </div>
+                    <div class="flex justify-between text-blue-600 font-semibold hidden" id="resumo-promo-container">
+                        <span>Desconto Promo:</span>
+                        <span id="resumo-desconto">-R$ 0,00</span>
+                    </div>
+                </div>
+
+                <div class="border-t border-slate-100 pt-4 flex justify-between items-baseline">
+                    <span class="text-base font-bold text-slate-800">Total Estimado:</span>
+                    <span id="resumo-total" class="text-2xl font-black text-blue-600">R$ 0,00</span>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Scripts -->
+    <script src="assets/js/db.js"></script>
+    <script src="assets/js/layout.js"></script>
+    
+    <script>
+        // Variáveis de Cálculo
+        let numDiarias = 0;
+        let valorDiariaQuarto = 0;
+        let quartoSelecionado = null;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            carregarDadosFormulario();
+            configurarDatasPadrao();
+        });
+
+        // Configura datas iniciais (Check-in = Hoje, Check-out = Amanhã)
+        function configurarDatasPadrao() {
+            const hoje = new Date();
+            const amanha = new Date();
+            amanha.setDate(hoje.getDate() + 1);
+
+            document.getElementById('data-entrada').value = hoje.toISOString().split('T')[0];
+            document.getElementById('data-saida').value = amanha.toISOString().split('T')[0];
+
+            atualizarPeriodo();
+        }
+
+        // Carrega Promoções e Políticas nos Dropdowns
+        function carregarDadosFormulario() {
+            const promocoes = HotelDB.DAOs.promocoes.obterTudo().filter(p => !p.inativo);
+            const politicas = HotelDB.DAOs.politicas.obterTudo().filter(p => !p.inativo);
+
+            const promoSelect = document.getElementById('promocao-id');
+            promocoes.forEach(p => {
+                const opt = document.createElement('option');
+                opt.value = p.id;
+                opt.innerText = `${p.codigo} (${p.descontoPercentual}% Off)`;
+                promoSelect.appendChild(opt);
+            });
+
+            const polSelect = document.getElementById('politica-id');
+            politicas.forEach(p => {
+                const opt = document.createElement('option');
+                opt.value = p.id;
+                opt.innerText = p.descricao;
+                polSelect.appendChild(opt);
+            });
+        }
+
+        // Autocomplete Hóspedes
+        function buscarHospedes() {
+            const busca = document.getElementById('hospede-busca').value.toLowerCase();
+            const resultados = document.getElementById('hospede-resultados');
+            
+            if (busca.length < 2) {
+                resultados.classList.add('hidden');
+                return;
+            }
+
+            const hospedes = HotelDB.DAOs.hospedes.obterTudo().filter(h => !h.inativo);
+            const filtrados = hospedes.filter(h => h.nome.toLowerCase().includes(busca) || h.cpf.includes(busca));
+
+            resultados.innerHTML = '';
+            if (filtrados.length === 0) {
+                resultados.innerHTML = `<div class="p-3 text-xs text-slate-500 italic">Nenhum hóspede ativo encontrado</div>`;
+            } else {
+                filtrados.forEach(h => {
+                    const div = document.createElement('div');
+                    div.className = 'p-3 text-sm hover:bg-slate-50 cursor-pointer border-b border-slate-100 last:border-0';
+                    div.innerHTML = `<strong>${h.nome}</strong> <span class="text-xs text-slate-400">(${h.cpf})</span>`;
+                    div.onclick = () => selecionarHospede(h);
+                    resultados.appendChild(div);
+                });
+            }
+            resultados.classList.remove('hidden');
+        }
+
+        function selecionarHospede(hospede) {
+            document.getElementById('hospede-id').value = hospede.id;
+            document.getElementById('hospede-busca').value = hospede.nome;
+            document.getElementById('hospede-busca').disabled = true;
+            document.getElementById('hospede-resultados').classList.add('hidden');
+            
+            const badge = document.getElementById('hospede-selecionado');
+            document.getElementById('hospede-detalhe').innerText = `Hóspede: ${hospede.nome} (CPF: ${hospede.cpf})`;
+            badge.classList.remove('hidden');
+
+            document.getElementById('resumo-hospede').innerText = hospede.nome;
+        }
+
+        function limparHospede() {
+            document.getElementById('hospede-id').value = '';
+            document.getElementById('hospede-busca').value = '';
+            document.getElementById('hospede-busca').disabled = false;
+            document.getElementById('hospede-selecionado').classList.add('hidden');
+            document.getElementById('resumo-hospede').innerText = '-';
+        }
+
+        // Calcula nº de diárias
+        function atualizarPeriodo() {
+            const entrada = document.getElementById('data-entrada').value;
+            const saida = document.getElementById('data-saida').value;
+
+            if (entrada && saida) {
+                const date1 = new Date(entrada);
+                const date2 = new Date(saida);
+                
+                // Formatar resumo lateral
+                document.getElementById('resumo-checkin').innerText = formatarDataBR(entrada);
+                document.getElementById('resumo-checkout').innerText = formatarDataBR(saida);
+
+                if (date2 > date1) {
+                    const diffTime = Math.abs(date2 - date1);
+                    numDiarias = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                    document.getElementById('resumo-diarias').innerText = numDiarias;
+                } else {
+                    numDiarias = 0;
+                    document.getElementById('resumo-diarias').innerText = '0 (Saída inválida)';
+                }
+                atualizarPrecoTotal();
+            }
+        }
+
+        // Filtra quartos disponíveis no período
+        function buscarQuartosDisponiveis() {
+            const entrada = document.getElementById('data-entrada').value;
+            const saida = document.getElementById('data-saida').value;
+            const adultos = parseInt(document.getElementById('qtd-adultos').value) || 1;
+            const criancas = parseInt(document.getElementById('qtd-criancas').value) || 0;
+            const container = document.getElementById('quarto-selecao-container');
+
+            if (!entrada || !saida || entrada >= saida) {
+                container.innerHTML = `<p class="text-sm text-slate-500 italic py-4 col-span-2 text-center">Informe datas válidas.</p>`;
+                return;
+            }
+
+            container.innerHTML = `<p class="text-sm text-blue-600 italic py-4 col-span-2 text-center">Buscando quartos disponíveis...</p>`;
+
+            // Algoritmo de cruzamento de reservas e quartos
+            setTimeout(() => {
+                const quartos = HotelDB.DAOs.quartos.obterTudo();
+                const reservas = HotelDB.DAOs.reservas.obterTudo();
+
+                // 1. Filtrar por quartos que não estejam em MANUTENCAO
+                let livres = quartos.filter(q => q.status !== 'MANUTENCAO');
+
+                // 2. Filtrar por capacidade
+                livres = livres.filter(q => q.capacidadeAdultos >= adultos && q.capacidadeCriancas >= criancas);
+
+                // 3. Filtrar por indisponibilidade de datas
+                livres = livres.filter(q => {
+                    const conflito = reservas.find(r => 
+                        r.quartoId == q.id &&
+                        r.status !== 'CANCELADA' &&
+                        (
+                            (entrada >= r.dataEntrada && entrada < r.dataSaida) ||
+                            (saida > r.dataEntrada && saida <= r.dataSaida) ||
+                            (entrada <= r.dataEntrada && saida >= r.dataSaida)
+                        )
+                    );
+                    return !conflito;
+                });
+
+                container.innerHTML = '';
+                if (livres.length === 0) {
+                    container.innerHTML = `<p class="text-sm text-red-500 font-semibold py-4 col-span-2 text-center">Nenhuma acomodação livre ou compatível no período.</p>`;
+                    return;
+                }
+
+                livres.forEach(q => {
+                    const card = document.createElement('div');
+                    card.className = `border p-4 rounded-xl cursor-pointer hover:bg-slate-50 transition-all ${
+                        quartoSelecionado && quartoSelecionado.id == q.id 
+                            ? 'border-blue-600 bg-blue-50/50 hover:bg-blue-50' 
+                            : 'border-slate-200 bg-white'
+                    }`;
+                    card.id = `quarto-card-${q.id}`;
+                    card.onclick = () => selecionarQuarto(q);
+                    card.innerHTML = `
+                        <div class="flex justify-between items-start mb-1">
+                            <span class="text-lg font-bold text-slate-800">Quarto ${q.numero}</span>
+                            <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">${q.tipo}</span>
+                        </div>
+                        <div class="text-[11px] text-slate-400">Capacidade: ${q.capacidadeAdultos} Ad / ${q.capacidadeCriancas} Cr</div>
+                        <div class="text-sm font-extrabold text-slate-900 mt-2">R$ ${q.valorDiaria.toFixed(2)}/dia</div>
+                    `;
+                    container.appendChild(card);
+                });
+            }, 300);
+        }
+
+        function selecionarQuarto(quarto) {
+            // Remover seleção anterior
+            if (quartoSelecionado) {
+                const cardAntigo = document.getElementById(`quarto-card-${quartoSelecionado.id}`);
+                if (cardAntigo) {
+                    cardAntigo.className = 'border border-slate-200 bg-white p-4 rounded-xl cursor-pointer hover:bg-slate-50 transition-all';
+                }
+            }
+
+            quartoSelecionado = quarto;
+            document.getElementById('quarto-id').value = quarto.id;
+            
+            const cardNovo = document.getElementById(`quarto-card-${quarto.id}`);
+            if (cardNovo) {
+                cardNovo.className = 'border-2 border-blue-600 bg-blue-50/50 p-4 rounded-xl cursor-pointer transition-all';
+            }
+
+            valorDiariaQuarto = quarto.valorDiaria;
+            document.getElementById('resumo-quarto').innerText = `Quarto ${quarto.numero}`;
+            document.getElementById('resumo-valor-diaria').innerText = `R$ ${quarto.valorDiaria.toFixed(2)}`;
+
+            atualizarPrecoTotal();
+        }
+
+        // Calcula e renderiza os preços no resumo lateral
+        function atualizarPrecoTotal() {
+            if (numDiarias <= 0 || valorDiariaQuarto <= 0) {
+                document.getElementById('resumo-total').innerText = 'R$ 0,00';
+                document.getElementById('resumo-promo-container').classList.add('hidden');
+                return;
+            }
+
+            let bruto = numDiarias * valorDiariaQuarto;
+            let desconto = 0;
+
+            const promoId = document.getElementById('promocao-id').value;
+            if (promoId) {
+                const promo = HotelDB.DAOs.promocoes.buscarPorId(promoId);
+                if (promo) {
+                    desconto = bruto * (parseFloat(promo.descontoPercentual) / 100);
+                    document.getElementById('resumo-desconto').innerText = `-R$ ${desconto.toFixed(2)}`;
+                    document.getElementById('resumo-promo-container').classList.remove('hidden');
+                }
+            } else {
+                document.getElementById('resumo-promo-container').classList.add('hidden');
+            }
+
+            let liquido = bruto - desconto;
+            document.getElementById('resumo-total').innerText = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(liquido);
+        }
+
+        // Cria reserva na Fachada
+        function criarReserva(event) {
+            event.preventDefault();
+
+            const hospedeId = document.getElementById('hospede-id').value;
+            const quartoId = document.getElementById('quarto-id').value;
+            const dataEntrada = document.getElementById('data-entrada').value;
+            const dataSaida = document.getElementById('data-saida').value;
+            const qtdAdultos = parseInt(document.getElementById('qtd-adultos').value);
+            const qtdCriancas = parseInt(document.getElementById('qtd-criancas').value);
+            const promoId = document.getElementById('promocao-id').value;
+            const politicaId = document.getElementById('politica-id').value;
+
+            if (!hospedeId) {
+                window.mostrarToast('Selecione um hóspede ativo!', 'erro');
+                return;
+            }
+            if (!quartoId) {
+                window.mostrarToast('Selecione um quarto disponível!', 'erro');
+                return;
+            }
+
+            // Calcular o valor total liquido
+            let bruto = numDiarias * valorDiariaQuarto;
+            let desconto = 0;
+            if (promoId) {
+                const promo = HotelDB.DAOs.promocoes.buscarPorId(promoId);
+                if (promo) {
+                    desconto = bruto * (parseFloat(promo.descontoPercentual) / 100);
+                }
+            }
+            let valorTotal = bruto - desconto;
+
+            const dados = {
+                id: null,
+                hospedeId: parseInt(hospedeId),
+                quartoId: parseInt(quartoId),
+                dataEntrada: dataEntrada,
+                dataSaida: dataSaida,
+                checkinRealizado: false,
+                noShow: false,
+                qtdAdultos: qtdAdultos,
+                qtdCriancas: qtdCriancas,
+                valorTotal: valorTotal,
+                promocaoId: promoId ? parseInt(promoId) : null,
+                politicaId: parseInt(politicaId),
+                status: 'CONFIRMADA' // Por padrão no protótipo, criamos já CONFIRMADA
+            };
+
+            const response = HotelDB.Fachada.salvar('reservas', dados);
+
+            if (response.sucesso) {
+                window.mostrarToast('Reserva criada e confirmada com sucesso!', 'sucesso');
+                setTimeout(() => {
+                    window.location.href = 'reservas-lista.html';
+                }, 1000);
+            } else {
+                window.mostrarToast(response.erro, 'erro');
+            }
+        }
+
+        // Helpers de Data
+        function formatarDataBR(dataStr) {
+            if (!dataStr) return '';
+            const partes = dataStr.split('-');
+            if (partes.length !== 3) return dataStr;
+            return `${partes[2]}/${partes[1]}/${partes[0]}`;
+        }
+    </script>
+</body>
+</html>

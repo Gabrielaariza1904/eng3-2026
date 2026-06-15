@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Políticas de Cancelamento - Hotel Imperial</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-50 min-h-screen flex">
+
+    <!-- Main Content -->
+    <main class="flex-1 p-8">
+        <header>
+            <h2>Políticas de Cancelamento</h2>
+            <div>
+                <a href="politicas-form.html" class="bg-blue-600 hover:bg-blue-700 text-white font-medium px-4 py-2 rounded-xl shadow-lg shadow-blue-600/20 transition-all duration-200 text-sm flex items-center gap-2">
+                    <span>➕</span> Nova Política
+                </a>
+            </div>
+        </header>
+
+        <!-- Tabela -->
+        <section class="glass-card rounded-2xl shadow-sm overflow-hidden fade-in-up">
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-slate-100">
+                    <thead class="bg-slate-50/50">
+                        <tr>
+                            <th class="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Descrição</th>
+                            <th class="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Horas de Antecedência</th>
+                            <th class="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Percentual Multa</th>
+                            <th class="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Status</th>
+                            <th class="px-6 py-4 text-right text-xs font-bold text-slate-500 uppercase tracking-wider">Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabela-politicas" class="bg-transparent divide-y divide-slate-100 text-slate-700">
+                        <!-- Gerado Dinamicamente -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+
+    <!-- Scripts -->
+    <script src="assets/js/db.js"></script>
+    <script src="assets/js/layout.js"></script>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            carregarPoliticas();
+        });
+
+        function carregarPoliticas() {
+            const politicas = HotelDB.DAOs.politicas.obterTudo();
+            renderizarTabela(politicas);
+        }
+
+        function renderizarTabela(politicasList) {
+            const tbody = document.getElementById('tabela-politicas');
+            tbody.innerHTML = '';
+
+            if (politicasList.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="5" class="px-6 py-8 text-center text-sm text-slate-500">
+                            Nenhuma política de cancelamento cadastrada.
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            politicasList.forEach(p => {
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-slate-50/40 transition-colors';
+
+                const statusBadge = p.inativo
+                    ? `<span class="inline-flex items-center text-xs font-semibold px-2.5 py-0.5 rounded-full bg-red-100 text-red-800">Inativo</span>`
+                    : `<span class="inline-flex items-center text-xs font-semibold px-2.5 py-0.5 rounded-full bg-green-100 text-green-800">Ativo</span>`;
+
+                const acaoStatus = p.inativo
+                    ? `<button onclick="alterarStatus(${p.id}, 'reativar')" class="text-green-600 hover:text-green-900 font-semibold mr-4 transition-all">Reativar</button>`
+                    : `<button onclick="alterarStatus(${p.id}, 'inativar')" class="text-red-600 hover:text-red-900 font-semibold mr-4 transition-all">Inativar</button>`;
+
+                tr.innerHTML = `
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-slate-900">${p.descricao}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-600">${p.horasAntecedencia} horas antes</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-slate-700">${p.percentualMulta}%</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm">${statusBadge}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        <a href="politicas-form.html?id=${p.id}" class="text-blue-600 hover:text-blue-900 font-semibold mr-4 transition-all">Editar</a>
+                        ${acaoStatus}
+                        <button onclick="excluirPolitica(${p.id})" class="text-slate-500 hover:text-slate-950 font-semibold transition-all">Excluir</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function alterarStatus(id, acao) {
+            let response;
+            if (acao === 'inativar') {
+                response = HotelDB.Fachada.inativar('politicas', id);
+            } else {
+                response = HotelDB.Fachada.reativar('politicas', id);
+            }
+
+            if (response.sucesso) {
+                window.mostrarToast(`Política ${acao === 'inativar' ? 'inativada' : 'reativada'} com sucesso!`, 'sucesso');
+                carregarPoliticas();
+            } else {
+                window.mostrarToast(response.erro, 'erro');
+            }
+        }
+
+        function excluirPolitica(id) {
+            if (confirm(`Deseja realmente excluir esta política de cancelamento?`)) {
+                // Verificar se política está em reservas ativas
+                const reservas = HotelDB.DAOs.reservas.obterTudo();
+                const emUso = reservas.find(r => r.politicaId == id && r.status !== 'CANCELADA' && r.status !== 'CONCLUIDA');
+                
+                if (emUso) {
+                    window.mostrarToast(`Não é possível excluir esta política pois ela está sendo usada pela reserva ativa #${emUso.id}.`, 'erro');
+                    return;
+                }
+
+                const response = HotelDB.Fachada.remover('politicas', id);
+                if (response.sucesso) {
+                    window.mostrarToast(`Política de cancelamento excluída com sucesso!`, 'sucesso');
+                    carregarPoliticas();
+                } else {
+                    window.mostrarToast(response.erro, 'erro');
+                }
+            }
+        }
+    </script>
+</body>
+</html>

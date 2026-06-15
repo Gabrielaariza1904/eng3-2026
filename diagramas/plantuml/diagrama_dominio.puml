@@ -1,0 +1,111 @@
+@startuml
+skinparam classAttributeIconSize 0
+
+abstract class Pessoa {
+  - id : int
+  - nome : String
+  - cpf : String
+  - email : String
+  - telefone : String
+}
+
+class Hospede {
+  - inativo : boolean
+}
+
+class Endereco {
+  - id : int
+  - logradouro : String
+  - numero : String
+  - cep : String
+  - bairro : String
+  - complemento : String
+}
+
+class Cidade {
+  - id : int
+  - nome : String
+}
+
+class Estado {
+  - id : int
+  - nome : String
+  - uf : String
+}
+
+class Quarto {
+  - id : int
+  - numero : String
+  - tipo : String
+  - capacidadeAdultos : int
+  - capacidadeCriancas : int
+  - valorDiaria : double
+  - status : StatusQuarto
+}
+
+enum StatusQuarto {
+  DISPONIVEL
+  OCUPADO
+  MANUTENCAO
+}
+
+class Reserva {
+  - id : int
+  - dataEntrada : LocalDate
+  - dataSaida : LocalDate
+  - checkinRealizado : boolean
+  - noShow : boolean
+  - qtdAdultos : int
+  - qtdCriancas : int
+  - valorTotal : double
+  - status : StatusReserva
+}
+
+enum StatusReserva {
+  PENDENTE
+  CONFIRMADA
+  CANCELADA
+  CONCLUIDA
+}
+
+class Promocao {
+  - id : int
+  - descricao : String
+  - descontoPercentual : double
+  - inativo : boolean
+}
+
+class PoliticaCancelamento {
+  - id : int
+  - descricao : String
+  - horasAntecedencia : int
+  - percentualMulta : double
+  - inativo : boolean
+}
+
+class Pagamento {
+  - id : int
+  - dataPagamento : LocalDateTime
+  - valor : double
+  - status : StatusPagamento
+}
+
+enum StatusPagamento {
+  PENDENTE
+  APROVADO
+  NEGADO
+  ESTORNADO
+}
+
+Pessoa <|-- Hospede
+Pessoa "1" --> "1" Endereco : possui
+Endereco "1" --> "1" Cidade : pertence
+Cidade "1" --> "1" Estado : localiza-se
+
+Hospede "1" --> "0..*" Reserva : realiza
+Reserva "1" --> "1" Quarto : reserva
+Reserva "0..*" --> "0..1" Promocao : utiliza
+Reserva "0..*" --> "1" PoliticaCancelamento : sujeita-a
+Reserva "1" --> "0..*" Pagamento : possui
+
+@enduml

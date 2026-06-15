@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cadastro de Quarto - Hotel Imperial</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-50 min-h-screen flex">
+
+    <!-- Main Content -->
+    <main class="flex-1 p-8">
+        <header>
+            <h2 id="form-titulo">Cadastrar Quarto</h2>
+            <div>
+                <a href="quartos-lista.html" class="text-blue-600 hover:text-blue-800 font-semibold text-sm flex items-center gap-1.5">
+                    <span>⬅️</span> Voltar para Lista
+                </a>
+            </div>
+        </header>
+
+        <section class="glass-card p-8 rounded-2xl shadow-sm max-w-2xl mx-auto fade-in-up">
+            <form id="form-quarto" class="space-y-6" onsubmit="salvarQuarto(event)">
+                <input type="hidden" id="quarto-id">
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Número -->
+                    <div>
+                        <label for="numero" class="block text-sm font-semibold text-slate-700 mb-2">Número do Quarto *</label>
+                        <input type="text" id="numero" required class="w-full border border-slate-200 rounded-xl p-3 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 bg-slate-50 text-slate-800 text-sm transition-all" placeholder="Ex: 101">
+                    </div>
+
+                    <!-- Tipo -->
+                    <div>
+                        <label for="tipo" class="block text-sm font-semibold text-slate-700 mb-2">Tipo de Quarto *</label>
+                        <select id="tipo" required class="w-full border border-slate-200 rounded-xl p-3 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 bg-slate-50 text-slate-800 text-sm transition-all">
+                            <option value="">Selecione o Tipo...</option>
+                            <option value="Standard Casal">Standard Casal</option>
+                            <option value="Standard Solteiro">Standard Solteiro</option>
+                            <option value="Luxo Casal">Luxo Casal</option>
+                            <option value="Luxo Duplo">Luxo Duplo</option>
+                            <option value="Suíte Master">Suíte Master</option>
+                            <option value="Suíte Premium">Suíte Premium</option>
+                        </select>
+                    </div>
+
+                    <!-- Capacidade Adultos -->
+                    <div>
+                        <label for="capacidadeAdultos" class="block text-sm font-semibold text-slate-700 mb-2">Capacidade Adultos *</label>
+                        <input type="number" id="capacidadeAdultos" min="1" max="10" required class="w-full border border-slate-200 rounded-xl p-3 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 bg-slate-50 text-slate-800 text-sm transition-all" placeholder="Min. 1">
+                    </div>
+
+                    <!-- Capacidade Crianças -->
+                    <div>
+                        <label for="capacidadeCriancas" class="block text-sm font-semibold text-slate-700 mb-2">Capacidade Crianças *</label>
+                        <input type="number" id="capacidadeCriancas" min="0" max="10" required class="w-full border border-slate-200 rounded-xl p-3 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 bg-slate-50 text-slate-800 text-sm transition-all" placeholder="Min. 0">
+                    </div>
+
+                    <!-- Valor da Diária -->
+                    <div>
+                        <label for="valorDiaria" class="block text-sm font-semibold text-slate-700 mb-2">Valor da Diária *</label>
+                        <div class="relative">
+                            <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-sm font-semibold text-slate-400">R$</span>
+                            <input type="number" id="valorDiaria" min="0.01" step="0.01" required class="w-full border border-slate-200 rounded-xl p-3 pl-9 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 bg-slate-50 text-slate-800 text-sm transition-all" placeholder="0.00">
+                        </div>
+                    </div>
+
+                    <!-- Status -->
+                    <div>
+                        <label for="status" class="block text-sm font-semibold text-slate-700 mb-2">Status Inicial *</label>
+                        <select id="status" required class="w-full border border-slate-200 rounded-xl p-3 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 bg-slate-50 text-slate-800 text-sm transition-all">
+                            <option value="DISPONIVEL">Disponível</option>
+                            <option value="OCUPADO">Ocupado</option>
+                            <option value="MANUTENCAO">Manutenção</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Botões de Ação -->
+                <div class="flex justify-end gap-4 border-t border-slate-100 pt-6">
+                    <button type="button" onclick="window.location.href='quartos-lista.html'" class="px-6 py-3 border border-slate-200 rounded-xl text-sm font-semibold text-slate-600 hover:bg-slate-50 transition-colors">Cancelar</button>
+                    <button type="submit" class="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl text-sm shadow-lg shadow-blue-600/15 transition-all">Salvar Quarto</button>
+                </div>
+            </form>
+        </section>
+    </main>
+
+    <!-- Scripts -->
+    <script src="assets/js/db.js"></script>
+    <script src="assets/js/layout.js"></script>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            detectarModoEdicao();
+        });
+
+        function detectarModoEdicao() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const id = urlParams.get('id');
+
+            if (id) {
+                document.getElementById('form-titulo').innerText = 'Editar Quarto';
+                const quarto = HotelDB.DAOs.quartos.buscarPorId(id);
+                if (quarto) {
+                    document.getElementById('quarto-id').value = quarto.id;
+                    document.getElementById('numero').value = quarto.numero;
+                    document.getElementById('tipo').value = quarto.tipo;
+                    document.getElementById('capacidadeAdultos').value = quarto.capacidadeAdultos;
+                    document.getElementById('capacidadeCriancas').value = quarto.capacidadeCriancas;
+                    document.getElementById('valorDiaria').value = quarto.valorDiaria;
+                    document.getElementById('status').value = quarto.status;
+                } else {
+                    window.mostrarToast('Quarto não encontrado!', 'erro');
+                    setTimeout(() => window.location.href = 'quartos-lista.html', 1500);
+                }
+            }
+        }
+
+        function salvarQuarto(event) {
+            event.preventDefault();
+
+            const id = document.getElementById('quarto-id').value;
+            const dados = {
+                id: id ? parseInt(id) : null,
+                numero: document.getElementById('numero').value.trim(),
+                tipo: document.getElementById('tipo').value,
+                capacidadeAdultos: parseInt(document.getElementById('capacidadeAdultos').value),
+                capacidadeCriancas: parseInt(document.getElementById('capacidadeCriancas').value),
+                valorDiaria: parseFloat(document.getElementById('valorDiaria').value),
+                status: document.getElementById('status').value
+            };
+
+            const response = HotelDB.Fachada.salvar('quartos', dados);
+
+            if (response.sucesso) {
+                window.mostrarToast(id ? 'Quarto atualizado com sucesso!' : 'Quarto cadastrado com sucesso!', 'sucesso');
+                setTimeout(() => {
+                    window.location.href = 'quartos-lista.html';
+                }, 1000);
+            } else {
+                window.mostrarToast(response.erro, 'erro');
+            }
+        }
+    </script>
+</body>
+</html>

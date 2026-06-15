@@ -1,0 +1,107 @@
+@startuml
+skinparam classAttributeIconSize 0
+
+package "Model (Dominio)" {
+    abstract class EntidadeDominio {
+        - id : int
+    }
+    
+    abstract class Pessoa extends EntidadeDominio {
+        - nome : String
+        - cpf : String
+        - email : String
+        - telefone : String
+    }
+
+    class Hospede extends Pessoa {
+        - inativo : boolean
+    }
+
+    class Endereco extends EntidadeDominio {
+        - logradouro : String
+        - numero : String
+        - cep : String
+        - bairro : String
+        - complemento : String
+    }
+
+    class Cidade extends EntidadeDominio {
+        - nome : String
+    }
+
+    class Estado extends EntidadeDominio {
+        - nome : String
+        - uf : String
+    }
+
+    Pessoa "1" --> "1" Endereco : possui
+    Endereco "1" --> "1" Cidade : tem
+    Cidade "1" --> "1" Estado : tem
+}
+
+package "Controller (MVC)" {
+    class HospedeController {
+        + salvar(hospede : Hospede) : String
+        + alterar(hospede : Hospede) : String
+        + inativar(id : int) : String
+        + consultar(filtros : Object) : List
+    }
+}
+
+package "Facade" {
+    class Fachada {
+        - daos : Map
+        - strategies : Map
+        + salvar(entidade : EntidadeDominio) : String
+        + alterar(entidade : EntidadeDominio) : String
+        + inativar(entidade : EntidadeDominio) : String
+        + consultar(entidade : EntidadeDominio) : List
+    }
+}
+
+package "Strategy (Regras de Negocio)" {
+    interface IStrategy {
+        + processar(entidade : EntidadeDominio) : String
+    }
+
+    class ValidarCpfUnico implements IStrategy {
+        + processar(entidade : EntidadeDominio) : String
+    }
+
+    class ValidarDadosObrigatoriosHospede implements IStrategy {
+        + processar(entidade : EntidadeDominio) : String
+    }
+    
+    class ValidarEmail implements IStrategy {
+        + processar(entidade : EntidadeDominio) : String
+    }
+}
+
+package "DAO (Persistencia)" {
+    interface IDAO {
+        + salvar(entidade : EntidadeDominio) : void
+        + alterar(entidade : EntidadeDominio) : void
+        + inativar(entidade : EntidadeDominio) : void
+        + consultar(entidade : EntidadeDominio) : List
+    }
+
+    class HospedeDAO implements IDAO {
+        - conexao : ConexaoMySQL
+        + salvar(entidade : EntidadeDominio) : void
+        + alterar(entidade : EntidadeDominio) : void
+        + inativar(entidade : EntidadeDominio) : void
+        + consultar(entidade : EntidadeDominio) : List
+    }
+
+    class ConexaoMySQL {
+        + getConnection() : Connection
+    }
+    
+    HospedeDAO "1" --> "1" ConexaoMySQL : usa
+}
+
+HospedeController "1" --> "1" Fachada : chama
+Fachada "1" --> "0..*" IStrategy : executa
+Fachada "1" --> "1..*" IDAO : delega
+
+@enduml
