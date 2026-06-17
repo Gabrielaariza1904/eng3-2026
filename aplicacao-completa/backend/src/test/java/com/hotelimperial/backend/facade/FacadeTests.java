@@ -9,7 +9,9 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.util.ReflectionTestUtils;
 
+import java.time.LocalDate;
 import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -20,6 +22,21 @@ public class FacadeTests {
 
     @Mock
     private HospedeDAO hospedeDAO;
+    @Mock
+    private QuartoDAO quartoDAO;
+    @Mock
+    private PromocaoDAO promocaoDAO;
+    @Mock
+    private PoliticaCancelamentoDAO politicaCancelamentoDAO;
+    @Mock
+    private ReservaDAO reservaDAO;
+    @Mock
+    private PagamentoDAO pagamentoDAO;
+
+    @Mock
+    private QuartoRepository quartoRepository;
+    @Mock
+    private ReservaRepository reservaRepository;
 
     @Mock
     private ValidarCpfUnico validarCpfUnico;
@@ -85,5 +102,33 @@ public class FacadeTests {
         when(hospedeDAO.consultar(h)).thenReturn(Collections.singletonList(h));
         List<Hospede> list = fachada.consultar(h);
         assertEquals(1, list.size());
+    }
+
+    @Test
+    public void testAtualizarStatusQuartoPorReservas() {
+        Quarto q1 = new Quarto();
+        q1.setId(1);
+        q1.setStatus(StatusQuarto.DISPONIVEL);
+
+        Quarto q2 = new Quarto();
+        q2.setId(2);
+        q2.setStatus(StatusQuarto.MANUTENCAO);
+
+        Reserva r = new Reserva();
+        r.setId(1);
+        r.setQuarto(q1);
+        r.setStatus(StatusReserva.CONFIRMADA);
+        r.setCheckinRealizado(true);
+        r.setDataEntrada(LocalDate.now().minusDays(1));
+        r.setDataSaida(LocalDate.now().plusDays(1));
+
+        when(quartoRepository.findAll()).thenReturn(Arrays.asList(q1, q2));
+        when(reservaRepository.findAll()).thenReturn(Collections.singletonList(r));
+
+        fachada.atualizarStatusQuartoPorReservas();
+
+        assertEquals(StatusQuarto.OCUPADO, q1.getStatus());
+        assertEquals(StatusQuarto.MANUTENCAO, q2.getStatus());
+        verify(quartoRepository, times(1)).saveAll(any());
     }
 }

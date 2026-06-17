@@ -3,14 +3,19 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Users, RotateCcw } from 'lucide-react';
+import { LayoutDashboard, KeyRound, Users, Bed, CreditCard, Tag, ScrollText, RotateCcw } from 'lucide-react';
 
 export default function Sidebar() {
   const pathname = usePathname();
 
   const menuItems = [
     { name: 'Painel Geral', href: '/', icon: LayoutDashboard, category: 'Principal' },
+    { name: 'Reservas', href: '/reservas', icon: KeyRound, category: 'Operações' },
     { name: 'Hóspedes', href: '/hospedes', icon: Users, category: 'Operações' },
+    { name: 'Quartos', href: '/quartos', icon: Bed, category: 'Operações' },
+    { name: 'Pagamentos', href: '/pagamentos', icon: CreditCard, category: 'Operações' },
+    { name: 'Promoções', href: '/promocoes', icon: Tag, category: 'Configurações' },
+    { name: 'Políticas Cancel.', href: '/politicas', icon: ScrollText, category: 'Configurações' },
   ];
 
   const resetDB = () => {
@@ -20,7 +25,7 @@ export default function Sidebar() {
     }
   };
 
-  const categories = ['Principal', 'Operações'];
+  const categories = ['Principal', 'Operações', 'Configurações'];
 
   const isActive = (href: string) => {
     if (href === '/') return pathname === '/';

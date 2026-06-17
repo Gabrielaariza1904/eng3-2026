@@ -4,23 +4,11 @@ import Sidebar from '../components/Sidebar';
 
 // Mock window.confirm
 const originalConfirm = window.confirm;
-const originalLocation = window.location;
-
 beforeAll(() => {
   window.confirm = jest.fn(() => true);
-  // Mock window.location.reload
-  Object.defineProperty(window, 'location', {
-    configurable: true,
-    value: { reload: jest.fn() },
-  });
 });
-
 afterAll(() => {
   window.confirm = originalConfirm;
-  Object.defineProperty(window, 'location', {
-    configurable: true,
-    value: originalLocation,
-  });
 });
 
 describe('Sidebar Component', () => {
@@ -28,6 +16,7 @@ describe('Sidebar Component', () => {
     render(<Sidebar />);
     expect(screen.getByText('Hotel Imperial')).toBeInTheDocument();
     expect(screen.getByText('Painel Geral')).toBeInTheDocument();
+    expect(screen.getByText('Reservas')).toBeInTheDocument();
     expect(screen.getByText('Hóspedes')).toBeInTheDocument();
   });
 
