@@ -6,6 +6,7 @@ classDiagram
         -cpf : String
         -email : String
         -telefone : String
+        -dataNascimento : LocalDate
     }
 
     class Hospede {
@@ -71,6 +72,7 @@ classDiagram
 
     class Promocao {
         -id : int
+        -codigo : String
         -descricao : String
         -descontoPercentual : double
         -inativo : boolean
@@ -88,6 +90,7 @@ classDiagram
         -id : int
         -dataPagamento : LocalDateTime
         -valor : double
+        -formaPagamento : String
         -status : StatusPagamento
     }
 
@@ -109,3 +112,10 @@ classDiagram
     Reserva "0..*" --> "0..1" Promocao : utiliza
     Reserva "0..*" --> "1" PoliticaCancelamento : sujeita-a
     Reserva "1" --> "0..*" Pagamento : possui
+
+    note for Hospede "RF0101-0104: CRUD Hóspedes\nRN0201: Dados obrigatórios\nRN0202: CPF único\nRN0211: E-mail válido\nRNF0113: Privacidade & LGPD"
+    note for Quarto "RF0111-0114: CRUD Quartos\nRN0203: Dados obrigatórios\nRN0215: Limites de Quarto Padrão"
+    note for Reserva "RF0201: Consultar disponibilidade\nRF0202-0206: Proposta, Criar, Alterar, Cancelar\nRF0207: Marcar No-Show\nRF0208-0209: Registrar Check-in/out\nRN0204: Dados obrigatórios\nRN0212: Janela de datas válida\nRN0213: Capacidade do quarto\nRN0214: Mínimo diárias feriados\nRN0221: Horário das diárias (14h-12h)\nRN0223: No-show no dia de entrada\nRN0241: Isenção de crianças <= 5 anos\nRN0243: Documento com foto no check-in"
+    note for Promocao "RF0121-0124: CRUD Promoções\nRN0242: Não cumulativas por padrão"
+    note for PoliticaCancelamento "RF0131-0134: CRUD Políticas\nRN0231: Cancelamento sem multa (48h)\nRN0232: Cancelamento com multa (50%)\nRN0233: Estorno proporcional à política"
+    note for Pagamento "RF0211-0214: CRUD Pagamentos\nRN0205: Dados obrigatórios\nRN0222: Confirmação só após aprovação"

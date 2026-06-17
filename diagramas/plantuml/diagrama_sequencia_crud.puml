@@ -6,7 +6,7 @@ participant Facade as "Fachada"
 participant Strategy1 as "ValidarDadosObrigatorios"
 participant Strategy2 as "ValidarCpfUnico"
 participant DAO as "HospedeDAO"
-participant DB as "MySQL"
+participant DB as "SQLite"
 
 Cliente -> View : Preenche form e clica em "Salvar"
 View -> Controller : POST /hospedes (JSON)

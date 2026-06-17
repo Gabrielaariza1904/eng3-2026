@@ -1,4 +1,5 @@
 @startuml
+left to right direction
 skinparam classAttributeIconSize 0
 
 package "Model (Dominio)" {
@@ -11,6 +12,7 @@ package "Model (Dominio)" {
         - cpf : String
         - email : String
         - telefone : String
+        - dataNascimento : LocalDate
     }
 
     class Hospede extends Pessoa {
@@ -34,28 +36,138 @@ package "Model (Dominio)" {
         - uf : String
     }
 
+    class Quarto extends EntidadeDominio {
+        - numero : String
+        - tipo : String
+        - capacidadeAdultos : int
+        - capacidadeCriancas : int
+        - valorDiaria : double
+        - status : StatusQuarto
+    }
+
+    enum StatusQuarto {
+        DISPONIVEL
+        OCUPADO
+        MANUTENCAO
+    }
+
+    class Reserva extends EntidadeDominio {
+        - dataEntrada : LocalDate
+        - dataSaida : LocalDate
+        - checkinRealizado : boolean
+        - noShow : boolean
+        - qtdAdultos : int
+        - qtdCriancas : int
+        - valorTotal : double
+        - status : StatusReserva
+    }
+
+    enum StatusReserva {
+        PENDENTE
+        CONFIRMADA
+        CANCELADA
+        CONCLUIDA
+    }
+
+    class Promocao extends EntidadeDominio {
+        - codigo : String
+        - descricao : String
+        - descontoPercentual : double
+        - inativo : boolean
+    }
+
+    class PoliticaCancelamento extends EntidadeDominio {
+        - descricao : String
+        - horasAntecedencia : int
+        - percentualMulta : double
+        - inativo : boolean
+    }
+
+    class Pagamento extends EntidadeDominio {
+        - dataPagamento : LocalDateTime
+        - valor : double
+        - formaPagamento : String
+        - status : StatusPagamento
+    }
+
+    enum StatusPagamento {
+        PENDENTE
+        APROVADO
+        NEGADO
+        ESTORNADO
+    }
+
     Pessoa "1" --> "1" Endereco : possui
     Endereco "1" --> "1" Cidade : tem
     Cidade "1" --> "1" Estado : tem
+    Hospede "1" --> "0..*" Reserva : realiza
+    Reserva "1" --> "1" Quarto : reserva
+    Reserva "0..*" --> "0..1" Promocao : utiliza
+    Reserva "0..*" --> "1" PoliticaCancelamento : sujeita-a
+    Reserva "1" --> "0..*" Pagamento : possui
 }
 
 package "Controller (MVC)" {
     class HospedeController {
-        + salvar(hospede : Hospede) : String
-        + alterar(hospede : Hospede) : String
-        + inativar(id : int) : String
-        + consultar(filtros : Object) : List
+        + salvar(hospede : Hospede) : ResponseEntity
+        + alterar(hospede : Hospede) : ResponseEntity
+        + inativar(id : int) : ResponseEntity
+        + reativar(id : int) : ResponseEntity
+        + consultar(hospede : Hospede) : ResponseEntity
+    }
+    
+    class QuartoController {
+        + salvar(quarto : Quarto) : ResponseEntity
+        + alterar(quarto : Quarto) : ResponseEntity
+        + inativar(id : int) : ResponseEntity
+        + consultar(quarto : Quarto) : ResponseEntity
+        + alterarStatus(id : int, status : String) : ResponseEntity
+    }
+
+    class ReservaController {
+        + salvar(reserva : Reserva) : ResponseEntity
+        + alterar(reserva : Reserva) : ResponseEntity
+        + inativar(id : int) : ResponseEntity
+        + consultar(reserva : Reserva) : ResponseEntity
+        + realizarCheckin(id : int, valor : boolean) : ResponseEntity
+        + cancelarReserva(id : int) : ResponseEntity
+    }
+
+    class PromocaoController {
+        + salvar(promocao : Promocao) : ResponseEntity
+        + inativar(id : int) : ResponseEntity
+        + reativar(id : int) : ResponseEntity
+        + consultar(promocao : Promocao) : ResponseEntity
+    }
+
+    class PoliticaCancelamentoController {
+        + salvar(politica : PoliticaCancelamento) : ResponseEntity
+        + inativar(id : int) : ResponseEntity
+        + reativar(id : int) : ResponseEntity
+        + consultar(politica : PoliticaCancelamento) : ResponseEntity
+    }
+
+    class PagamentoController {
+        + salvar(pagamento : Pagamento) : ResponseEntity
+        + inativar(id : int) : ResponseEntity
+        + consultar(pagamento : Pagamento) : ResponseEntity
+    }
+
+    class DashboardController {
+        + obterKpis() : ResponseEntity
+        + obterAtividades() : ResponseEntity
     }
 }
 
 package "Facade" {
     class Fachada {
-        - daos : Map
-        - strategies : Map
+        - daos : Map<String, IDAO>
+        - strategies : Map<String, List<IStrategy>>
         + salvar(entidade : EntidadeDominio) : String
         + alterar(entidade : EntidadeDominio) : String
         + inativar(entidade : EntidadeDominio) : String
-        + consultar(entidade : EntidadeDominio) : List
+        + consultar(entidade : EntidadeDominio) : List<EntidadeDominio>
+        + atualizarStatusQuartoPorReservas() : void
     }
 }
 
@@ -64,17 +176,19 @@ package "Strategy (Regras de Negocio)" {
         + processar(entidade : EntidadeDominio) : String
     }
 
-    class ValidarCpfUnico implements IStrategy {
-        + processar(entidade : EntidadeDominio) : String
-    }
-
-    class ValidarDadosObrigatoriosHospede implements IStrategy {
-        + processar(entidade : EntidadeDominio) : String
-    }
-    
-    class ValidarEmail implements IStrategy {
-        + processar(entidade : EntidadeDominio) : String
-    }
+    class ValidarCpfUnico implements IStrategy
+    class ValidarEmail implements IStrategy
+    class ValidarDadosObrigatoriosHospede implements IStrategy
+    class ValidarNumeroUnicoQuarto implements IStrategy
+    class ValidarDadosObrigatoriosQuarto implements IStrategy
+    class ValidarCodigoUnicoPromocao implements IStrategy
+    class ValidarDadosObrigatoriosPromocao implements IStrategy
+    class ValidarDadosObrigatoriosPolitica implements IStrategy
+    class ValidarDadosObrigatoriosReserva implements IStrategy
+    class ValidarDatasReserva implements IStrategy
+    class ValidarCapacidadeQuartoReserva implements IStrategy
+    class ValidarDisponibilidadeQuartoReserva implements IStrategy
+    class ValidarDadosObrigatoriosPagamento implements IStrategy
 }
 
 package "DAO (Persistencia)" {
@@ -82,25 +196,36 @@ package "DAO (Persistencia)" {
         + salvar(entidade : EntidadeDominio) : void
         + alterar(entidade : EntidadeDominio) : void
         + inativar(entidade : EntidadeDominio) : void
-        + consultar(entidade : EntidadeDominio) : List
+        + consultar(entidade : EntidadeDominio) : List<EntidadeDominio>
     }
 
-    class HospedeDAO implements IDAO {
-        - conexao : ConexaoMySQL
-        + salvar(entidade : EntidadeDominio) : void
-        + alterar(entidade : EntidadeDominio) : void
-        + inativar(entidade : EntidadeDominio) : void
-        + consultar(entidade : EntidadeDominio) : List
-    }
+    class HospedeDAO implements IDAO
+    class QuartoDAO implements IDAO
+    class ReservaDAO implements IDAO
+    class PromocaoDAO implements IDAO
+    class PoliticaCancelamentoDAO implements IDAO
+    class PagamentoDAO implements IDAO
 
-    class ConexaoMySQL {
+    class ConexaoSQLite {
         + getConnection() : Connection
     }
     
-    HospedeDAO "1" --> "1" ConexaoMySQL : usa
+    HospedeDAO --> ConexaoSQLite : usa
+    QuartoDAO --> ConexaoSQLite : usa
+    ReservaDAO --> ConexaoSQLite : usa
+    PromocaoDAO --> ConexaoSQLite : usa
+    PoliticaCancelamentoDAO --> ConexaoSQLite : usa
+    PagamentoDAO --> ConexaoSQLite : usa
 }
 
-HospedeController "1" --> "1" Fachada : chama
+HospedeController --> Fachada : chama
+QuartoController --> Fachada : chama
+ReservaController --> Fachada : chama
+PromocaoController --> Fachada : chama
+PoliticaCancelamentoController --> Fachada : chama
+PagamentoController --> Fachada : chama
+DashboardController --> Fachada : chama
+
 Fachada "1" --> "0..*" IStrategy : executa
 Fachada "1" --> "1..*" IDAO : delega
 

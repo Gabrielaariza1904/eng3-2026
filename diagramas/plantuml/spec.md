@@ -1,0 +1,1 @@
+preciso que o diagrama de implementação em plantuml seja mais organizado, pode remover os comentarios com os requisitos e regras de negocios. organize visualmente para que o diagrama fique mais próximo de formato A4. Está mmuito comprido

@@ -7,6 +7,7 @@ abstract class Pessoa {
   - cpf : String
   - email : String
   - telefone : String
+  - dataNascimento : LocalDate
 }
 
 class Hospede {
@@ -70,6 +71,7 @@ enum StatusReserva {
 
 class Promocao {
   - id : int
+  - codigo : String
   - descricao : String
   - descontoPercentual : double
   - inativo : boolean
@@ -87,6 +89,7 @@ class Pagamento {
   - id : int
   - dataPagamento : LocalDateTime
   - valor : double
+  - formaPagamento : String
   - status : StatusPagamento
 }
 
@@ -107,5 +110,60 @@ Reserva "1" --> "1" Quarto : reserva
 Reserva "0..*" --> "0..1" Promocao : utiliza
 Reserva "0..*" --> "1" PoliticaCancelamento : sujeita-a
 Reserva "1" --> "0..*" Pagamento : possui
+
+note right of Hospede
+  **Cadastro de Hóspedes**
+  * RF0101-0104: CRUD Hóspedes
+  * RN0201: Dados obrigatórios
+  * RN0202: CPF único
+  * RN0211: E-mail válido
+  * RNF0113: Privacidade & LGPD
+end note
+
+note right of Quarto
+  **Cadastro de Quartos**
+  * RF0111-0114: CRUD Quartos
+  * RN0203: Dados obrigatórios
+  * RN0215: Limites de Quarto Padrão
+end note
+
+note bottom of Reserva
+  **Gestão de Reservas**
+  * RF0201: Consultar disponibilidade
+  * RF0202-0206: Proposta, Criar, Alterar, Cancelar
+  * RF0207: Marcar No-Show
+  * RF0208-0209: Registrar Check-in/out
+  * RN0204: Dados obrigatórios da Reserva
+  * RN0212: Janela de datas válida
+  * RN0213: Capacidade do quarto
+  * RN0214: Mínimo diárias feriados
+  * RN0221: Horário das diárias (14h-12h)
+  * RN0223: No-show no dia de entrada
+  * RN0241: Isenção de crianças <= 5 anos
+  * RN0243: Documento com foto no check-in
+  * RNF0131: Auditoria (Log)
+end note
+
+note right of Promocao
+  **Gestão de Promoções**
+  * RF0121-0124: CRUD Promoções
+  * RN0242: Não cumulativas por padrão
+end note
+
+note right of PoliticaCancelamento
+  **Políticas de Cancelamento**
+  * RF0131-0134: CRUD Políticas
+  * RN0231: Cancelamento sem multa (48h)
+  * RN0232: Cancelamento com multa (50%)
+  * RN0233: Estorno proporcional à política
+end note
+
+note right of Pagamento
+  **Gestão de Pagamentos**
+  * RF0211-0214: CRUD Pagamentos
+  * RN0205: Dados obrigatórios
+  * RN0222: Confirmação só após aprovação
+  * RNF0141: Resiliência de gateways
+end note
 
 @enduml

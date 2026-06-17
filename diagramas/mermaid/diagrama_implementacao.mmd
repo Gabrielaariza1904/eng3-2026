@@ -10,6 +10,7 @@ classDiagram
             -cpf : String
             -email : String
             -telefone : String
+            -dataNascimento : LocalDate
         }
         class Hospede {
             -inativo : boolean
@@ -28,14 +29,105 @@ classDiagram
             -nome : String
             -uf : String
         }
+        class Quarto {
+            -numero : String
+            -tipo : String
+            -capacidadeAdultos : int
+            -capacidadeCriancas : int
+            -valorDiaria : double
+            -status : StatusQuarto
+        }
+        class StatusQuarto {
+            <<enumeration>>
+            DISPONIVEL
+            OCUPADO
+            MANUTENCAO
+        }
+        class Reserva {
+            -dataEntrada : LocalDate
+            -dataSaida : LocalDate
+            -checkinRealizado : boolean
+            -noShow : boolean
+            -qtdAdultos : int
+            -qtdCriancas : int
+            -valorTotal : double
+            -status : StatusReserva
+        }
+        class StatusReserva {
+            <<enumeration>>
+            PENDENTE
+            CONFIRMADA
+            CANCELADA
+            CONCLUIDA
+        }
+        class Promocao {
+            -codigo : String
+            -descricao : String
+            -descontoPercentual : double
+            -inativo : boolean
+        }
+        class PoliticaCancelamento {
+            -descricao : String
+            -horasAntecedencia : int
+            -percentualMulta : double
+            -inativo : boolean
+        }
+        class Pagamento {
+            -dataPagamento : LocalDateTime
+            -valor : double
+            -formaPagamento : String
+            -status : StatusPagamento
+        }
+        class StatusPagamento {
+            <<enumeration>>
+            PENDENTE
+            APROVADO
+            NEGADO
+            ESTORNADO
+        }
     }
     
     namespace Controller_MVC {
         class HospedeController {
-            +salvar(hospede : Hospede) : String
-            +alterar(hospede : Hospede) : String
-            +inativar(id : int) : String
-            +consultar(filtros : Object) : List
+            +salvar(hospede : Hospede) : ResponseEntity
+            +alterar(hospede : Hospede) : ResponseEntity
+            +inativar(id : int) : ResponseEntity
+            +reativar(id : int) : ResponseEntity
+            +consultar(hospede : Hospede) : ResponseEntity
+        }
+        class QuartoController {
+            +salvar(quarto : Quarto) : ResponseEntity
+            +alterar(quarto : Quarto) : ResponseEntity
+            +inativar(id : int) : ResponseEntity
+            +consultar(quarto : Quarto) : ResponseEntity
+            +alterarStatus(id : int, status : String) : ResponseEntity
+        }
+        class ReservaController {
+            +salvar(reserva : Reserva) : ResponseEntity
+            +alterar(reserva : Reserva) : ResponseEntity
+            +inativar(id : int) : ResponseEntity
+            +consultar(reserva : Reserva) : ResponseEntity
+            +realizarCheckin(id : int, valor : boolean) : ResponseEntity
+            +cancelarReserva(id : int) : ResponseEntity
+        }
+        class PromocaoController {
+            +salvar(promocao : Promocao) : ResponseEntity
+            +inativar(id : int) : ResponseEntity
+            +consultar(promocao : Promocao) : ResponseEntity
+        }
+        class PoliticaCancelamentoController {
+            +salvar(politica : PoliticaCancelamento) : ResponseEntity
+            +inativar(id : int) : ResponseEntity
+            +consultar(politica : PoliticaCancelamento) : ResponseEntity
+        }
+        class PagamentoController {
+            +salvar(pagamento : Pagamento) : ResponseEntity
+            +inativar(id : int) : ResponseEntity
+            +consultar(pagamento : Pagamento) : ResponseEntity
+        }
+        class DashboardController {
+            +obterKpis() : ResponseEntity
+            +obterAtividades() : ResponseEntity
         }
     }
 
@@ -47,6 +139,7 @@ classDiagram
             +alterar(entidade : EntidadeDominio) : String
             +inativar(entidade : EntidadeDominio) : String
             +consultar(entidade : EntidadeDominio) : List
+            +atualizarStatusQuartoPorReservas() : void
         }
     }
 
@@ -58,10 +151,40 @@ classDiagram
         class ValidarCpfUnico {
             +processar(entidade : EntidadeDominio) : String
         }
+        class ValidarEmail {
+            +processar(entidade : EntidadeDominio) : String
+        }
         class ValidarDadosObrigatoriosHospede {
             +processar(entidade : EntidadeDominio) : String
         }
-        class ValidarEmail {
+        class ValidarNumeroUnicoQuarto {
+            +processar(entidade : EntidadeDominio) : String
+        }
+        class ValidarDadosObrigatoriosQuarto {
+            +processar(entidade : EntidadeDominio) : String
+        }
+        class ValidarCodigoUnicoPromocao {
+            +processar(entidade : EntidadeDominio) : String
+        }
+        class ValidarDadosObrigatoriosPromocao {
+            +processar(entidade : EntidadeDominio) : String
+        }
+        class ValidarDadosObrigatoriosPolitica {
+            +processar(entidade : EntidadeDominio) : String
+        }
+        class ValidarDadosObrigatoriosReserva {
+            +processar(entidade : EntidadeDominio) : String
+        }
+        class ValidarDatasReserva {
+            +processar(entidade : EntidadeDominio) : String
+        }
+        class ValidarCapacidadeQuartoReserva {
+            +processar(entidade : EntidadeDominio) : String
+        }
+        class ValidarDisponibilidadeQuartoReserva {
+            +processar(entidade : EntidadeDominio) : String
+        }
+        class ValidarDadosObrigatoriosPagamento {
             +processar(entidade : EntidadeDominio) : String
         }
     }
@@ -75,13 +198,48 @@ classDiagram
             +consultar(entidade : EntidadeDominio) : List
         }
         class HospedeDAO {
-            -conexao : ConexaoMySQL
+            -conexao : ConexaoSQLite
             +salvar(entidade : EntidadeDominio) : void
             +alterar(entidade : EntidadeDominio) : void
             +inativar(entidade : EntidadeDominio) : void
             +consultar(entidade : EntidadeDominio) : List
         }
-        class ConexaoMySQL {
+        class QuartoDAO {
+            -conexao : ConexaoSQLite
+            +salvar(entidade : EntidadeDominio) : void
+            +alterar(entidade : EntidadeDominio) : void
+            +inativar(entidade : EntidadeDominio) : void
+            +consultar(entidade : EntidadeDominio) : List
+        }
+        class ReservaDAO {
+            -conexao : ConexaoSQLite
+            +salvar(entidade : EntidadeDominio) : void
+            +alterar(entidade : EntidadeDominio) : void
+            +inativar(entidade : EntidadeDominio) : void
+            +consultar(entidade : EntidadeDominio) : List
+        }
+        class PromocaoDAO {
+            -conexao : ConexaoSQLite
+            +salvar(entidade : EntidadeDominio) : void
+            +alterar(entidade : EntidadeDominio) : void
+            +inativar(entidade : EntidadeDominio) : void
+            +consultar(entidade : EntidadeDominio) : List
+        }
+        class PoliticaCancelamentoDAO {
+            -conexao : ConexaoSQLite
+            +salvar(entidade : EntidadeDominio) : void
+            +alterar(entidade : EntidadeDominio) : void
+            +inativar(entidade : EntidadeDominio) : void
+            +consultar(entidade : EntidadeDominio) : List
+        }
+        class PagamentoDAO {
+            -conexao : ConexaoSQLite
+            +salvar(entidade : EntidadeDominio) : void
+            +alterar(entidade : EntidadeDominio) : void
+            +inativar(entidade : EntidadeDominio) : void
+            +consultar(entidade : EntidadeDominio) : List
+        }
+        class ConexaoSQLite {
             +getConnection() : Connection
         }
     }
@@ -92,20 +250,62 @@ classDiagram
     EntidadeDominio <|-- Endereco
     EntidadeDominio <|-- Cidade
     EntidadeDominio <|-- Estado
+    EntidadeDominio <|-- Quarto
+    EntidadeDominio <|-- Reserva
+    EntidadeDominio <|-- Promocao
+    EntidadeDominio <|-- PoliticaCancelamento
+    EntidadeDominio <|-- Pagamento
+
     Pessoa "1" --> "1" Endereco : possui
     Endereco "1" --> "1" Cidade : tem
     Cidade "1" --> "1" Estado : tem
-
-    %% Relationships within DAO_Persistencia
-    HospedeDAO "1" --> "1" ConexaoMySQL : usa
+    Hospede "1" --> "0..*" Reserva : realiza
+    Reserva "1" --> "1" Quarto : reserva
+    Reserva "0..*" --> "0..1" Promocao : utiliza
+    Reserva "0..*" --> "1" PoliticaCancelamento : sujeita-a
+    Reserva "1" --> "0..*" Pagamento : possui
 
     %% Interface Realizations
     IStrategy <|.. ValidarCpfUnico
-    IStrategy <|.. ValidarDadosObrigatoriosHospede
     IStrategy <|.. ValidarEmail
+    IStrategy <|.. ValidarDadosObrigatoriosHospede
+    IStrategy <|.. ValidarNumeroUnicoQuarto
+    IStrategy <|.. ValidarDadosObrigatoriosQuarto
+    IStrategy <|.. ValidarCodigoUnicoPromocao
+    IStrategy <|.. ValidarDadosObrigatoriosPromocao
+    IStrategy <|.. ValidarDadosObrigatoriosPolitica
+    IStrategy <|.. ValidarDadosObrigatoriosReserva
+    IStrategy <|.. ValidarDatasReserva
+    IStrategy <|.. ValidarCapacidadeQuartoReserva
+    IStrategy <|.. ValidarDisponibilidadeQuartoReserva
+    IStrategy <|.. ValidarDadosObrigatoriosPagamento
+
     IDAO <|.. HospedeDAO
+    IDAO <|.. QuartoDAO
+    IDAO <|.. ReservaDAO
+    IDAO <|.. PromocaoDAO
+    IDAO <|.. PoliticaCancelamentoDAO
+    IDAO <|.. PagamentoDAO
+
+    HospedeDAO "1" --> "1" ConexaoSQLite : usa
+    QuartoDAO "1" --> "1" ConexaoSQLite : usa
+    ReservaDAO "1" --> "1" ConexaoSQLite : usa
+    PromocaoDAO "1" --> "1" ConexaoSQLite : usa
+    PoliticaCancelamentoDAO "1" --> "1" ConexaoSQLite : usa
+    PagamentoDAO "1" --> "1" ConexaoSQLite : usa
 
     %% Cross-namespace relationships
     HospedeController "1" --> "1" Fachada : chama
+    QuartoController "1" --> "1" Fachada : chama
+    ReservaController "1" --> "1" Fachada : chama
+    PromocaoController "1" --> "1" Fachada : chama
+    PoliticaCancelamentoController "1" --> "1" Fachada : chama
+    PagamentoController "1" --> "1" Fachada : chama
+    DashboardController "1" --> "1" Fachada : chama
+
     Fachada "1" --> "0..*" IStrategy : executa
     Fachada "1" --> "1..*" IDAO : delega
+
+    note for Strategy_Regras_de_Negocio "Regras Mapeadas:\nRN0201: Obrigatórios Hóspede\nRN0202: CPF único\nRN0203: Obrigatórios Quarto\nRN0204: Obrigatórios Reserva\nRN0205: Obrigatórios Pagamento\nRN0211: E-mail\nRN0212/RN0214: Datas Reserva\nRN0213/RN0215/RN0241: Capacidade"
+    note for Controller_MVC "Não Funcionais:\nRNF0111: HTTPS\nRNF0101: Resposta consulta < 3s\nRNF0102: Resposta reserva < 5s"
+    note for DAO_Persistencia "Resiliência & Segurança:\nRNF0112: Hashing/Salt\nRNF0141: Circuit Breaker Pagamentos\nRNF0142: Resiliência Integrações"
